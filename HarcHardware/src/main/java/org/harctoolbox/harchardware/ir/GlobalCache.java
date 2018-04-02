@@ -407,7 +407,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                     System.out.println(seq);
 //                    if (seq != null) {
 //                        System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
-//                    }   break;
+//                    }
+                    break;
                 case "listen_serial":
                     System.err.println("Press Ctrl-C to interrupt.");
                     // Never returns

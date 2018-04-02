@@ -156,6 +156,7 @@ public class Wave {
                 String inputfile = commandLineArgs.parameters.get(0);
                 Wave wave = new Wave(new File(inputfile));
                 ModulatedIrSequence seq = wave.analyze(!commandLineArgs.dontDivide);
+                // FIXME
                 //IrSignal irSignal = new
                 //DecodeIR.invoke(seq);
                 wave.dump(new File(inputfile + ".tsv"));

@@ -24,7 +24,6 @@ import com.beust.jcommander.Parameters;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -41,7 +40,7 @@ import org.harctoolbox.irp.IrpUtils;
  * server through a TCP port.
  * Functionally, it resembles the command line program irsend.
  */
-public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSenderStop, ITransmitter, Serializable {
+public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSenderStop, ITransmitter {
 
     public final static int lircDefaultPort = 8765;
     public final static String defaultLircIP = "127.0.0.1"; // localhost
@@ -411,7 +410,6 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
         }
         if (verbose)
             System.err.println("Lirc command " + (status == 0 ? "succeded." : "failed."));
-
         return status == 0 && result != null ? result.toArray(new String[result.size()]) : null;
     }
 
