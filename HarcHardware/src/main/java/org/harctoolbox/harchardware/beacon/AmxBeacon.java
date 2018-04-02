@@ -24,7 +24,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.nio.charset.Charset;
 import org.harctoolbox.harchardware.Utils;
 
 
@@ -83,7 +83,7 @@ public class AmxBeacon {
             //sock.setSoTimeout(timeout);
             InetAddress addr = InetAddress.getByName(broadcastIp);
             try {
-                byte[] buf = payload.getBytes(IrpUtils.dumbCharsetName);
+                byte[] buf = payload.getBytes(Charset.forName("US-ASCII"));
 
                 DatagramPacket dp = new DatagramPacket(buf, buf.length, addr, broadcastPort);
                 sock.send(dp);

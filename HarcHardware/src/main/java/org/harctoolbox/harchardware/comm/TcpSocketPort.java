@@ -20,7 +20,7 @@ package org.harctoolbox.harchardware.comm;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.nio.charset.Charset;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Utils;
@@ -99,7 +99,7 @@ public class TcpSocketPort implements ICommandLineDevice, IBytesCommand, IHarcHa
     public void sendString(String str) throws IOException {
         if (tcpSocketChannel.getVerbose())
             System.err.println(">" + str);
-        sendBytes(str.getBytes(IrpUtils.dumbCharset));
+        sendBytes(str.getBytes(Charset.forName("US-ASCII")));
     }
 
     @Override

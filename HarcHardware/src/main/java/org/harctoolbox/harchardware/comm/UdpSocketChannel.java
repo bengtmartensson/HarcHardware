@@ -28,7 +28,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.nio.charset.Charset;
 
 /**
  * This a helper class, to bundle the socket operations in a unified manner.
@@ -65,7 +65,7 @@ public class UdpSocketChannel {
         socket = new DatagramSocket();
         socket.setSoTimeout(timeout);
         try {
-            outStream = new PrintStream(new FilteredStream(new ByteArrayOutputStream()), false, IrpUtils.dumbCharsetName);
+            outStream = new PrintStream(new FilteredStream(new ByteArrayOutputStream()), false, "US-ASCII");
         } catch (UnsupportedEncodingException ex) {
             // cannot happen
         }
@@ -77,7 +77,7 @@ public class UdpSocketChannel {
 
     private void send(byte[] buf) throws IOException {
         if (verbose)
-            System.err.println("Sending command `" + new String(buf, IrpUtils.dumbCharset) + "' over UDP to " + inetAddress.getCanonicalHostName() + ":" +  portNumber);
+            System.err.println("Sending command `" + new String(buf, Charset.forName("US-ASCII")) + "' over UDP to " + inetAddress.getCanonicalHostName() + ":" +  portNumber);
         DatagramPacket dp = new DatagramPacket(buf, buf.length, inetAddress, portNumber);
         socket.send(dp);
     }
@@ -108,7 +108,7 @@ public class UdpSocketChannel {
         if (verbose)
             System.err.println("listening at:" + portNumber + "...");
         socket.receive(pack);
-        String payload = (new String(pack.getData(), 0, pack.getLength(), IrpUtils.dumbCharset));
+        String payload = (new String(pack.getData(), 0, pack.getLength(), Charset.forName("US-ASCII")));
         InetAddress a = pack.getAddress();
         int port = pack.getPort();
         if (verbose)

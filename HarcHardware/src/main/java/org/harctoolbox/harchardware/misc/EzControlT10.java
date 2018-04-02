@@ -19,8 +19,8 @@ package org.harctoolbox.harchardware.misc;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.util.Locale;
-import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.IrpMaster.XmlUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
@@ -672,7 +672,7 @@ public class EzControlT10 implements IHarcHardware, IWeb {
         boolean success = true;
         try {
             InputStream is = (new URL(url)).openStream();
-            r = new BufferedReader(new InputStreamReader(is, IrpUtils.dumbCharset));
+            r = new BufferedReader(new InputStreamReader(is, Charset.forName("US-ASCII")));
             String str;
             do {
                 str = r.readLine();
@@ -740,7 +740,7 @@ public class EzControlT10 implements IHarcHardware, IWeb {
         BufferedReader r = null;
         try {
             InputStream is = (new URL(url)).openStream();
-            r = new BufferedReader(new InputStreamReader(is, IrpUtils.dumbCharset));
+            r = new BufferedReader(new InputStreamReader(is, Charset.forName("US-ASCII")));
             String str;
             do {
                 str = r.readLine();
@@ -1011,10 +1011,10 @@ public class EzControlT10 implements IHarcHardware, IWeb {
         RS862;
 
         public static EZSystem parse(String systemName) {
-            return systemName.toLowerCase(IrpUtils.dumbLocale).equals("intertechno") ? IT
-                    : systemName.toLowerCase(IrpUtils.dumbLocale).equals("conrad") ? RS200
-                    : systemName.toLowerCase(IrpUtils.dumbLocale).equals("x10") ? MARMI
-                    : valueOf(systemName.replace('-', '_').toUpperCase(IrpUtils.dumbLocale));
+            return systemName.toLowerCase(Locale.US).equals("intertechno") ? IT
+                    : systemName.toLowerCase(Locale.US).equals("conrad") ? RS200
+                    : systemName.toLowerCase(Locale.US).equals("x10") ? MARMI
+                    : valueOf(systemName.replace('-', '_').toUpperCase(Locale.US));
         }
 
         /**

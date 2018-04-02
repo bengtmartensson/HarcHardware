@@ -21,7 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.nio.charset.Charset;
 
 // Ref: http://www.openremote.org/display/docs/Controller+2.0+HTTP-REST-XML
 
@@ -52,7 +52,7 @@ public class OpenremoteClient {
             srvSock = new java.net.ServerSocket(listenPort);
             //s = new Socket();
             s = srvSock.accept();
-            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream(), IrpUtils.dumbCharset));
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream(), Charset.forName("US-ASCII")));
             result = in.readLine();
         } catch (IOException ex) {
             System.err.println(ex.getMessage());

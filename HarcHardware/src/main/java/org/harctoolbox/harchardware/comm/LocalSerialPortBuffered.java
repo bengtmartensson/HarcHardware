@@ -24,8 +24,8 @@ import gnu.io.UnsupportedCommOperationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.Utils;
@@ -82,14 +82,14 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     @Override
     public void open() throws HarcHardwareException, IOException {
         super.open();
-        bufferedInStream = new BufferedReader(new InputStreamReader(inStream, IrpUtils.dumbCharset));
+        bufferedInStream = new BufferedReader(new InputStreamReader(inStream, Charset.forName("US_ASCII")));
     }
 
     @Override
     public void sendString(String cmd) throws IOException {
         if (verbose)
             System.err.println("LocalSerialPortBuffered.sendString: Sent '" + Utils.escapeCommandLine(cmd) + "'.");
-        sendBytes(cmd.getBytes(IrpUtils.dumbCharset));
+        sendBytes(cmd.getBytes(Charset.forName("US_ASCII")));
     }
 
     //*@Override

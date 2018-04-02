@@ -22,7 +22,7 @@ import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.util.Locale;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
 
 /**
@@ -250,7 +250,7 @@ public class FramedDevice {
         private final boolean toUpper;
 
         public Framer(String format, boolean toUpper) {
-            this.format = new MessageFormat(format, IrpUtils.dumbLocale);
+            this.format = new MessageFormat(format, Locale.US);
             this.toUpper = toUpper;
         }
 
@@ -261,7 +261,7 @@ public class FramedDevice {
         @Override
         public String frame(String arg) {
             //return format.format(toUpper ? arg.toUpperCase(IrpUtils.dumbLocale) : arg);
-            return frame(new Object[]{ toUpper ? arg.toUpperCase(IrpUtils.dumbLocale) : arg });
+            return frame(new Object[]{ toUpper ? arg.toUpperCase(Locale.US) : arg });
         }
 
         @Override

@@ -27,7 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.nio.charset.Charset;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.Utils;
 
@@ -95,12 +95,12 @@ public class TcpSocketChannel implements ICommandLineDevice, IBytesCommand {
         }
 
         if (outStream == null)
-            //outStream = new PrintStream(socket.getOutputStream(), false, IrpUtils.dumbCharsetName);
+            //outStream = new PrintStream(socket.getOutputStream(), false, Charset.forName("US-ASCII")Name);
             outStream = socket.getOutputStream();
 
         if (inStream == null) {
             inStream = socket.getInputStream();
-            bufferedInStream = new BufferedReader(new InputStreamReader(inStream, IrpUtils.dumbCharset));
+            bufferedInStream = new BufferedReader(new InputStreamReader(inStream, Charset.forName("US-ASCII")));
         }
     }
 
@@ -161,7 +161,7 @@ public class TcpSocketChannel implements ICommandLineDevice, IBytesCommand {
 
     @Override
     public void sendString(String cmd) throws IOException {
-        sendBytes(cmd.getBytes(IrpUtils.dumbCharset));
+        sendBytes(cmd.getBytes(Charset.forName("US-ASCII")));
     }
 
     @Override

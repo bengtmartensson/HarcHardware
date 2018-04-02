@@ -22,12 +22,12 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.harctoolbox.IrpMaster.IrpUtils;
 
 /**
  * This class listens for an AMX beacon and reports its findings.
@@ -231,7 +231,7 @@ public class AmxBeaconListener {
                 System.err.println("listening...");
             sock.receive(pack);
             //System.err.println("got something...");
-            String payload = (new String(pack.getData(), 0, pack.getLength(), IrpUtils.dumbCharset)).trim();
+            String payload = (new String(pack.getData(), 0, pack.getLength(), Charset.forName("US-ASCII"))).trim();
             InetAddress a = pack.getAddress();
             int port = pack.getPort();
             if (debug)
