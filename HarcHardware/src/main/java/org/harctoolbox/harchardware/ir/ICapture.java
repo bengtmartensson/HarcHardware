@@ -18,9 +18,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.ModulatedIrSequence;
 
 /**
  * This hardware captures IR signals, for analyzing rather than for deployment use.
@@ -36,9 +36,9 @@ public interface ICapture extends IIrReader {
      * @return Captured sequence, or null by timeout.
      * @throws HarcHardwareException if the device is not in valid/open state.
      * @throws IOException
-     * @throws IrpMasterException
+     * @throws org.harctoolbox.ircore.OddSequenceLengthException
      */
-    public ModulatedIrSequence capture() throws HarcHardwareException, IOException, IrpMasterException;
+    public ModulatedIrSequence capture() throws HarcHardwareException, IOException, InvalidArgumentException;
 
     /**
      * Signals the capturing device that it should stop capturing.

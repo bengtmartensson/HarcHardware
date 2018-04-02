@@ -24,15 +24,14 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import org.harctoolbox.IrpMaster.DecodeIR;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
-import org.harctoolbox.IrpMaster.Pronto;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
+import org.harctoolbox.ircore.Pronto;
 
 /**
  * This class implements capturing and sending support for the CommandFusion Learner.
@@ -95,7 +94,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
             commandFusion.open();
             System.out.println("Version: " + commandFusion.getVersion());
             if (args.length > 0) {
-                IrSignal irSignal = new IrSignal(args, 0);
+                IrSignal irSignal = Pronto.parse(args);
                 boolean success = commandFusion.sendIr(irSignal, 1, null);
                 System.out.println(success ? "Sending succeeded" : "Sending failed");
             } else {
@@ -105,20 +104,20 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
                     System.err.println("No input");
                 } else {
                     System.out.println(seq);
-                    DecodeIR.invoke(seq);
+                    //DecodeIR.invoke(seq);
                 }
             }
-        } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException | IrpMasterException ex) {
+        } catch (InvalidArgumentException | Pronto.NonProntoFormatException | NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
             ex.printStackTrace();
             System.exit(1);
         }
         System.exit(0);
     }
 
-    private static byte[] encode(IrSignal irSignal, int count) throws IncompatibleArgumentException {
+    private static byte[] encode(IrSignal irSignal, int count) {
         if (irSignal == null)
             throw new NullPointerException("irSignal cannot be null");
-        String data = "P0" + Integer.toString(PORTID) + ":RAW:" + irSignal.toOneShot(count).ccfString();
+        String data = "P0" + Integer.toString(PORTID) + ":RAW:" + Pronto.toPrintString(irSignal.toOneShot(count));
         return encode(SENDCOMMAND, data);
     }
 
@@ -265,11 +264,10 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
      * @param count
      * @param transmitter Not used
      * @return Success of operation.
-     * @throws IncompatibleArgumentException
      * @throws IOException
      */
     @Override
-    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws IncompatibleArgumentException, IOException {
+    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws IOException {
         return sendIr(encode(irSignal, count));
     }
 
@@ -325,7 +323,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     }
 
     @Override
-    public ModulatedIrSequence capture() throws IOException, IncompatibleArgumentException {
+    public ModulatedIrSequence capture() throws IOException, OddSequenceLengthException, InvalidArgumentException {
         stopRequested = false;
         Status status;
         do {
@@ -365,7 +363,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         ModulatedIrSequence modulatedIrSequence = null;
         try {
             modulatedIrSequence = readCapture();
-        } catch (IncompatibleArgumentException ex) {
+        } catch (InvalidArgumentException ex) {
             throw ex;
         } finally {
             // Finally, the IR Learner will send back an LIR command with a data value END to signify the end of the IR
@@ -378,7 +376,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         return modulatedIrSequence;
     }
 
-    private ModulatedIrSequence readCapture() throws IOException, IncompatibleArgumentException {
+    private ModulatedIrSequence readCapture() throws IOException, OddSequenceLengthException, InvalidArgumentException {
         //IR Learner will send back a RIR reply with data in the format of IRCODE:<irdata>
         byte[] response = readUntilTwoEndTokens();
         if (response == null)
@@ -393,10 +391,10 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         if (!payload.data.startsWith(IRCODE + ":"))
             return null;
         int index = IRCODE.length() + 1;
-        double frequency = Pronto.getFrequency(Integer.parseInt(payload.data.substring(index, index+4), 16));
+        double frequency = Pronto.frequency(Integer.parseInt(payload.data.substring(index, index+4), 16));
         index += 4;
         if ((payload.data.length() - index) % 4 != 0)
-            throw new IncompatibleArgumentException("Receive length erroneous");
+            throw new InvalidArgumentException("Receive length erroneous");
 
         ArrayList<Integer> durations = new ArrayList<>(payload.data.length() - index);
         boolean lastState = false;

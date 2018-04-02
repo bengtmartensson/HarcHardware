@@ -26,11 +26,11 @@ import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.Pronto;
+import java.nio.charset.Charset;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.Pronto;
 
 /**
  * This is not ready for deployment.
@@ -232,7 +232,7 @@ import org.harctoolbox.harchardware.IHarcHardware;
     private String readString() throws IOException {
         byte[] buf = new byte[bufsize];
         int length = in.read(buf);
-        return new String(buf, 0, length, IrpUtils.dumbCharset);
+        return new String(buf, 0, length, Charset.forName("US-ASCII"));
     }
 
     private int readByte() throws IOException {
@@ -246,7 +246,7 @@ import org.harctoolbox.harchardware.IHarcHardware;
         for (int i = 0; i < 4; i++)
             buf[i] = (byte) readByte();
 
-        return new String(buf, IrpUtils.dumbCharset);
+        return new String(buf, Charset.forName("US-ASCII"));
     }
 
     public void bootloaderMode() throws IOException, InterruptedException {
@@ -344,12 +344,12 @@ import org.harctoolbox.harchardware.IHarcHardware;
     }
 
     @Override
-    public boolean sendIr(IrSignal code, int count, Transmitter transmitter) throws IrpMasterException, IOException {
+    public boolean sendIr(IrSignal code, int count, Transmitter transmitter) throws IOException {
         return transmit(code.getFrequency(), code.toIntArray(count-1));
     }
 
-    public boolean sendCcf(String ccf, int count, Transmitter transmitter) throws IOException, IrpMasterException {
-        return sendIr(Pronto.ccfSignal(ccf), count, transmitter);
+    public boolean sendCcf(String ccf, int count, Transmitter transmitter) throws IOException, Pronto.NonProntoFormatException, InvalidArgumentException {
+        return sendIr(Pronto.parse(ccf), count, transmitter);
     }
 
     /**

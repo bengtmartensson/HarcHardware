@@ -26,13 +26,12 @@ import gnu.io.SerialPort;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.io.InputStream;
-import org.harctoolbox.IrpMaster.DecodeIR;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.ircore.IrCoreUtils;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 
 /**
  * This class implements support for Kevin Timmerman's Ir Widget.
@@ -74,7 +73,7 @@ public class IrWidget implements IHarcHardware, ICapture {
             if (seq == null) {
                 System.err.println("No input");
             } else {
-                DecodeIR.invoke(seq);
+//                DecodeIR.invoke(seq);
             }
         } catch (IOException ex) {
             System.err.println("exception: " + ex.toString() + ex.getMessage());
@@ -239,7 +238,7 @@ public class IrWidget implements IHarcHardware, ICapture {
             throw new RuntimeException(ex);
         }
         InputStream inputStream = serialPort.getInputStream();
-        int toRead = (int) Math.round(captureMaxSize * IrpUtils.milliseconds2microseconds / msPerTick);
+        int toRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / msPerTick);
         data = new byte[toRead];
 
         byte last = -1;
@@ -290,8 +289,8 @@ public class IrWidget implements IHarcHardware, ICapture {
         }
         boolean success = compute(bytesRead);
         try {
-            seq = success ? new ModulatedIrSequence(new IrSequence(times, true), frequency, -1.0) : null;
-        } catch (IncompatibleArgumentException ex) {
+            seq = success ? new ModulatedIrSequence(new IrSequence(times), frequency, null) : null;
+        } catch (OddSequenceLengthException ex) {
             System.err.println("Internal error: " + ex.getMessage());
         }
 
@@ -381,7 +380,7 @@ public class IrWidget implements IHarcHardware, ICapture {
 
         if (debug > 0)
             System.out.println("IrWidget read pulses = " + pulses + ", gaps = " + gaps);
-        frequency = periods/(bins * msPerTick * IrpUtils.microseconds2seconds);
+        frequency = periods/IrCoreUtils.microseconds2seconds(bins * msPerTick);
 
         times = new int[pulses + gaps];
         int index = 0;
@@ -424,7 +423,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     }
 
     private int pulseDuration(int pulses) {
-        int x = (int) Math.round(pulses/frequency * IrpUtils.seconds2microseconds);
+        int x = (int) Math.round(IrCoreUtils.seconds2microseconds(pulses/frequency));
         return x;
     }
 

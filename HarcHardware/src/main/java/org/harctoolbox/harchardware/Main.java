@@ -29,13 +29,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.DecodeIR;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.beacon.AmxBeaconListener;
 import org.harctoolbox.harchardware.ir.GlobalCache;
 import org.harctoolbox.harchardware.ir.ICapture;
@@ -47,6 +40,9 @@ import org.harctoolbox.harchardware.ir.IrWidget;
 import org.harctoolbox.harchardware.ir.LircCcfClient;
 import org.harctoolbox.harchardware.ir.LircClient;
 import org.harctoolbox.harchardware.ir.Transmitter;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.irp.IrpUtils;
 
 /**
  * Gives possibilities to invoke many of the functions from the command line. Demonstrates the interfaces.
@@ -99,7 +95,7 @@ public class Main {
                 + "parameters: <protocol> <deviceno> [<subdevice_no>] commandno [<toggle>]\n"
                 + "   or       <Pronto code>");
 
-        (exitcode == IrpUtils.exitSuccess ? System.out : System.err).println(str);
+        (exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err).println(str);
         doExit(exitcode);
     }
 
@@ -117,18 +113,18 @@ public class Main {
             argumentParser.parse(args);
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
-            usage(IrpUtils.exitUsageError);
+            usage(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         if (commandLineArgs.helpRequested)
-            usage(IrpUtils.exitSuccess);
+            usage(IrpUtils.EXIT_SUCCESS);
 
         if (commandLineArgs.versionRequested) {
             System.out.println(Version.versionString);
             System.out.println("JVM: " + System.getProperty("java.vendor") + " " + System.getProperty("java.version") + " " + System.getProperty("os.name") + "-" + System.getProperty("os.arch"));
             System.out.println();
             System.out.println(Version.licenseString);
-            doExit(IrpUtils.exitSuccess);
+            doExit(IrpUtils.EXIT_SUCCESS);
         }
 
         Runtime.getRuntime().addShutdownHook(closeOnShutdown);
@@ -141,12 +137,12 @@ public class Main {
             nodes.forEach((node) -> {
                 System.out.println(node);
             });
-            doExit(IrpUtils.exitSuccess);
+            doExit(IrpUtils.EXIT_SUCCESS);
         }
 
         if (noHardware != 1) {
             System.err.println("Exactly one hardware device must be given.");
-            doExit(IrpUtils.exitUsageError);
+            doExit(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         boolean didSomethingUseful = false;
@@ -213,18 +209,18 @@ public class Main {
             if (commandLineArgs.capture) {
                 if (captureDevice == null) {
                     System.err.println("Hardware does not support capturing");
-                    doExit(IrpUtils.exitUsageError);
+                    doExit(IrpUtils.EXIT_USAGE_ERROR);
                 } else {
                     captureDevice.open();
                     captureDevice.setBeginTimeout(commandLineArgs.timeout);
                     ModulatedIrSequence seq = captureDevice.capture();
                     if (seq != null) {
                         System.out.println(seq);
-                        System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
-                        doExit(IrpUtils.exitSuccess);
+                        //System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
+                        doExit(IrpUtils.EXIT_SUCCESS);
                     } else {
                         System.err.println("Nothing received");
-                        doExit(IrpUtils.exitFatalProgramFailure);
+                        doExit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
                     }
                 }
             }
@@ -274,43 +270,44 @@ public class Main {
 
             if (commandLineArgs.parameters.isEmpty()) {
                 if (didSomethingUseful)
-                    doExit(IrpUtils.exitSuccess);
+                    doExit(IrpUtils.EXIT_SUCCESS);
                 else {
                     System.err.println("Nothing to do.");
-                    usage(IrpUtils.exitUsageError);
+                    usage(IrpUtils.EXIT_USAGE_ERROR);
                 }
             }
 
             if (rawIrSender == null) {
                 System.err.println("Hardware does not support raw IR signals");
-                doExit(IrpUtils.exitUsageError);
+                doExit(IrpUtils.EXIT_USAGE_ERROR);
             } else {
-
-                IrSignal irSignal = new IrSignal(commandLineArgs.irprotocolsIniFilename, 0,
-                        commandLineArgs.parameters.toArray(new String[commandLineArgs.parameters.size()]));
-                for (int i = 0; i < commandLineArgs.loop; i++) {
-                    boolean success = rawIrSender.sendIr(irSignal, commandLineArgs.count, transmitter);
-                    if (success) {
-                        if (commandLineArgs.verbose)
-                            System.err.println("sendIr succeeded");
-                    } else
-                        System.err.println("sendIr failed");
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
+// FIXME
+//
+//                IrSignal irSignal = new IrSignal(commandLineArgs.irprotocolsIniFilename, 0,
+//                        commandLineArgs.parameters.toArray(new String[commandLineArgs.parameters.size()]));
+//                for (int i = 0; i < commandLineArgs.loop; i++) {
+//                    boolean success = rawIrSender.sendIr(irSignal, commandLineArgs.count, transmitter);
+//                    if (success) {
+//                        if (commandLineArgs.verbose)
+//                            System.err.println("sendIr succeeded");
+//                    } else
+//                        System.err.println("sendIr failed");
+//                    try {
+//                        Thread.sleep(200);
+//                    } catch (InterruptedException ex) {
+//                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+//                }
             }
 
-            doExit(IrpUtils.exitSuccess);
+            doExit(IrpUtils.EXIT_SUCCESS);
 
         } catch (NoSuchPortException ex) {
             System.err.println("RXTX: No such port");
-            System.exit(IrpUtils.exitFatalProgramFailure);
-        } catch (HarcHardwareException | IrpMasterException | IOException | PortInUseException | UnsupportedCommOperationException ex) {
+            System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
+        } catch (HarcHardwareException | InvalidArgumentException | IOException | PortInUseException | UnsupportedCommOperationException ex) {
             System.err.println(ex.getMessage());
-            System.exit(IrpUtils.exitFatalProgramFailure);
+            System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
         }
     }
     private Main() {

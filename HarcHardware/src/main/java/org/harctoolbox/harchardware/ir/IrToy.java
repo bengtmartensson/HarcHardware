@@ -21,17 +21,18 @@ import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
-import org.harctoolbox.IrpMaster.Pronto;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrCoreUtils;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
+import org.harctoolbox.ircore.Pronto;
 
 /**
  * This class contains a driver for Dangerous Prototype's IrToy.
@@ -113,26 +114,26 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             if (args.length >= 1 && args[0].equals("-b"))
                 toy.bootloaderMode();
             else {
-                //int[] data = new int[]{889, 889, 1778, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 90886};
-                System.out.println(toy.getVersion());
-                //String result = toy.selftest();
-                //System.out.println(result);
-                toy.setLed(true);
-                toy.setLedMute(false);
-                IrSignal signal = new IrSignal("../IrpMaster/data/IrpProtocols.ini", "nec1", "D=122 F=26");
-                boolean success = toy.sendIr(signal, 10, null);
-                //String success = toy.selftest();
-                toy.setPin(powerPin, true);
-                toy.setPin(receivePin, true);
-                toy.setPin(sendingPin, true);
-
-                System.out.println(success);
+//                //int[] data = new int[]{889, 889, 1778, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 90886};
+//                System.out.println(toy.getVersion());
+//                //String result = toy.selftest();
+//                //System.out.println(result);
+//                toy.setLed(true);
+//                toy.setLedMute(false);
+//                IrSignal signal = new IrSignal("../IrpMaster/data/IrpProtocols.ini", "nec1", "D=122 F=26");
+//                boolean success = toy.sendIr(signal, 10, null);
+//                //String success = toy.selftest();
+//                toy.setPin(powerPin, true);
+//                toy.setPin(receivePin, true);
+//                toy.setPin(sendingPin, true);
+//
+//                System.out.println(success);
             }
         } catch (NoSuchPortException ex) {
             System.err.println("Port for IRToy " + portName + " was not found");
         } catch (PortInUseException ex) {
             System.err.println("Port for IRToy in use");
-        } catch (HarcHardwareException | UnsupportedCommOperationException | IOException | IrpMasterException ex) {
+        } catch (HarcHardwareException | UnsupportedCommOperationException | IOException ex) {
             System.err.println(ex.getMessage());
         } finally {
             if (toy != null) {
@@ -354,7 +355,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         int count = read2Bytes();
         //System.err.println(t1);System.err.println(t2);System.err.println(t3);System.err.println(count);System.err.println(onTimes);
         //return (2*PICClockFrequency)/((double)(t3 - t1));
-        return count/(onTimes * IrpUtils.microseconds2seconds) ;
+        return count/IrCoreUtils.microseconds2seconds(onTimes) ;
     }
 
     @Override
@@ -374,7 +375,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         ModulatedIrSequence seq = null;
         try {
             seq = new ModulatedIrSequence(data, frequency);
-        } catch (IncompatibleArgumentException ex) {
+        } catch (OddSequenceLengthException ex) {
             throw new HarcHardwareException("IrToy: Erroneous data received.");
         }
         return seq;
@@ -462,7 +463,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
 
     private String readString(int length) throws IOException {
         byte[] buf = serialPort.readBytes(length);
-        return new String(buf, 0, length, IrpUtils.dumbCharset);
+        return new String(buf, 0, length, Charset.forName("US_ASCII"));
     }
 
     private int readByte() throws IOException {
@@ -530,12 +531,12 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     }
 
     @Override
-    public boolean sendIr(IrSignal code, int count, Transmitter transmitter) throws IrpMasterException, IOException, HarcHardwareException {
-        return transmit(code.toIntArrayCount(count), code.getFrequency());
+    public boolean sendIr(IrSignal code, int count, Transmitter transmitter) throws IOException, HarcHardwareException {
+        return transmit(code.toIntArray(count), code.getFrequency());
     }
 
-    public boolean sendCcf(String ccf, int count, Transmitter transmitter) throws IOException, IrpMasterException, HarcHardwareException {
-        return sendIr(Pronto.ccfSignal(ccf), count, transmitter);
+    public boolean sendCcf(String ccf, int count, Transmitter transmitter) throws IOException, HarcHardwareException, Pronto.NonProntoFormatException, InvalidArgumentException {
+        return sendIr(Pronto.parse(ccf), count, transmitter);
     }
 
     /**

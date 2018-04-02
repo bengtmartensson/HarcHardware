@@ -6,7 +6,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.IrSequence;
+import org.harctoolbox.ircore.IrSequence;
 import static org.testng.Assert.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -62,7 +62,7 @@ public class Mode2ParserNGTest {
     public void testReadIrSequencesUntilEOF() throws IOException {
         System.out.println("readIrSequencesUntilEOF");
         StringReader reader = new StringReader(testString);
-        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULTTHRESHOLD);
+        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULT_THRESHOLD);
         List result;
         result = instance.readIrSequencesUntilEOF();
         assertEquals(result.size(), 2);
@@ -77,12 +77,12 @@ public class Mode2ParserNGTest {
     public void testReadIrSequence() throws IOException {
         System.out.println("readIrSequence");
         StringReader reader = new StringReader(testString);
-        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULTTHRESHOLD);
+        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULT_THRESHOLD);
         IrSequence result;
         try {
             result = instance.readIrSequence();
             String expected = "+2 -3 +15 -1000007";
-            assertEquals(result.toPrintString(true), expected);
+            assertEquals(result.toString(true, " ", "", ""), expected);
         } catch (ParseException ex) {
             fail();
         }
@@ -101,7 +101,7 @@ public class Mode2ParserNGTest {
         }
         try {
             result = instance.readIrSequence();
-            assertEquals(result.toPrintString(true), "+9 -10 +11 -50000");
+            assertEquals(result.toString(true, " ", "", ""), "+9 -10 +11 -50000");
         } catch (ParseException ex) {
             Logger.getLogger(Mode2ParserNGTest.class.getName()).log(Level.SEVERE, null, ex);
         }

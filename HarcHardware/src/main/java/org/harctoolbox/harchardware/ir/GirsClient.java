@@ -24,19 +24,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.DecodeIR;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 
 /**
  *
@@ -119,18 +116,18 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             if (irSequence == null) {
                 System.err.println("No input");
                 gc.close();
-                IrpUtils.exit(1);
+                System.exit(1);
             }
-            ModulatedIrSequence seq = new ModulatedIrSequence(irSequence, IrpUtils.defaultFrequency);
+            ModulatedIrSequence seq = new ModulatedIrSequence(irSequence, ModulatedIrSequence.DEFAULT_FREQUENCY);
             System.out.println(seq);
-            DecodeIR.invoke(seq);
+            //DecodeIR.invoke(seq);
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException ex) {
                 Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
             }
             gc.close();
-        } catch (IOException | HarcHardwareException | IrpMasterException ex) {
+        } catch (IOException | HarcHardwareException ex) {
             Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -145,7 +142,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private int beginTimeout;
     private int maxCaptureLength;
     private int endingTimeout;
-    private int fallbackFrequency = (int) IrpUtils.defaultFrequency;
+    private int fallbackFrequency = (int) ModulatedIrSequence.DEFAULT_FREQUENCY;
     private boolean stopRequested = false;
     private boolean pendingCapture = false;
 
@@ -274,7 +271,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     @Override
-    public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IrpMasterException, IOException, HarcHardwareException {
+    public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IOException, HarcHardwareException {
         String payload = formatSendString(irSignal, count);
         hardware.sendString(payload + lineEnding);
         if (verbose)
@@ -352,7 +349,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
         StringBuilder str = new StringBuilder(128);
         for (int i = 0; i < irSequence.getLength(); i++)
-            str.append(separator).append(Integer.toString(irSequence.iget(i)));
+            str.append(separator).append(Integer.toString((int) irSequence.get(i)));
         return str;
     }
 
@@ -361,10 +358,10 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             throw new IllegalArgumentException("irSignal cannot be null");
         StringBuilder str = new StringBuilder(sendCommand);
         str.append(separator).append(Integer.toString(count));
-        str.append(separator).append(Integer.toString((int) irSignal.getFrequency()));
-        str.append(separator).append(Integer.toString(2 * irSignal.getIntroBursts()));
-        str.append(separator).append(Integer.toString(2 * irSignal.getRepeatBursts()));
-        str.append(separator).append(Integer.toString(2 * irSignal.getEndingBursts()));
+        str.append(separator).append(Integer.toString((int) ModulatedIrSequence.getFrequencyWithDefault(irSignal.getFrequency())));
+        str.append(separator).append(Integer.toString(irSignal.getIntroLength()));
+        str.append(separator).append(Integer.toString(irSignal.getRepeatLength()));
+        str.append(separator).append(Integer.toString(irSignal.getEndingLength()));
 
         str.append(join(irSignal.getIntroSequence(), separator));
         str.append(join(irSignal.getRepeatSequence(), separator));
@@ -374,16 +371,16 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     @Override
-    public ModulatedIrSequence capture() throws IOException, HarcHardwareException, IrpMasterException {
+    public ModulatedIrSequence capture() throws IOException, HarcHardwareException, OddSequenceLengthException {
         return useReceiveForCapture ? mockModulatedIrSequence() : realCapture();
     }
 
-    private ModulatedIrSequence mockModulatedIrSequence() throws HarcHardwareException, IOException, IrpMasterException {
+    private ModulatedIrSequence mockModulatedIrSequence() throws HarcHardwareException, IOException {
         IrSequence irSequence = receive();
-        return irSequence == null ? null : new ModulatedIrSequence(irSequence, fallbackFrequency);
+        return irSequence == null ? null : new ModulatedIrSequence(irSequence, (double) fallbackFrequency, null);
     }
 
-    private ModulatedIrSequence realCapture() throws HarcHardwareException, IOException {
+    private ModulatedIrSequence realCapture() throws HarcHardwareException, IOException, OddSequenceLengthException {
         if (stopRequested) // ???
             return null;
         if (!isValid())
@@ -420,7 +417,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             if (ex.getMessage().equals("Underlying input stream returned zero bytes")) //RXTX timeout
                 return null;
             throw ex;
-        } catch (IncompatibleArgumentException ex) {
+        } catch (OddSequenceLengthException ex) {
             //close();
             throw new HarcHardwareException(ex);
         }
@@ -435,7 +432,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     @Override
-    public IrSequence receive() throws HarcHardwareException, IOException, IrpMasterException {
+    public IrSequence receive() throws HarcHardwareException, IOException {
         if (stopRequested) // ???
             return null;
         if (!isValid())
@@ -464,7 +461,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             if (ex.getMessage().equals("Underlying input stream returned zero bytes")) //RXTX timeout
                 return null;
             throw ex;
-        } catch (IncompatibleArgumentException ex) {
+        } catch (OddSequenceLengthException ex) {
             //close();
             throw new HarcHardwareException(ex);
         }
@@ -530,7 +527,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     @Override
-    public boolean sendIrRepeat(IrSignal irSignal, Transmitter transmitter) throws NoSuchTransmitterException, IOException, IrpMasterException {
+    public boolean sendIrRepeat(IrSignal irSignal, Transmitter transmitter) throws NoSuchTransmitterException, IOException {
         throw new UnsupportedOperationException("Not supported yet."); // TODO
     }
 

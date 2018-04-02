@@ -19,8 +19,8 @@ package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSignal;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.Pronto;
 
 /**
  * A <a href="http://www.lirc.org">LIRC</a> client, talking to a remote LIRC
@@ -63,8 +63,8 @@ public class LircCcfClient extends LircClient implements IRawIrSender {
     }
 
     @Override
-    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws IOException, IncompatibleArgumentException, NoSuchTransmitterException {
-        return sendCcf(irSignal.ccfString(), count, transmitter);
+    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws IOException, NoSuchTransmitterException {
+        return sendCcf(Pronto.toPrintString(irSignal), count, transmitter);
     }
 
     @Override

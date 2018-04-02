@@ -25,12 +25,12 @@ import gnu.io.PortInUseException;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.util.ArrayList;
-import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
 import org.harctoolbox.harchardware.comm.UdpSocketPort;
 import org.harctoolbox.harchardware.comm.UrlPort;
 import org.harctoolbox.harchardware.ir.GlobalCache;
+import org.harctoolbox.irp.IrpUtils;
 
 /**
  * Gives possibilities to invoke many of the functions from the command line. Demonstrates the interfaces.
@@ -64,7 +64,7 @@ public class MainString {
         StringBuilder str = new StringBuilder(128);
         argumentParser.usage(str);
 
-        (exitcode == IrpUtils.exitSuccess ? System.out : System.err).println(str);
+        (exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err).println(str);
         doExit(exitcode);
     }
 
@@ -81,23 +81,23 @@ public class MainString {
             argumentParser.parse(args);
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
-            usage(IrpUtils.exitUsageError);
+            usage(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         if (commandLineArgs.helpRequested)
-            usage(IrpUtils.exitSuccess);
+            usage(IrpUtils.EXIT_SUCCESS);
 
         if (commandLineArgs.versionRequested) {
             System.out.println(Version.versionString);
             System.out.println("JVM: " + System.getProperty("java.vendor") + " " + System.getProperty("java.version") + " " + System.getProperty("os.name") + "-" + System.getProperty("os.arch"));
             System.out.println();
             System.out.println(Version.licenseString);
-            System.exit(IrpUtils.exitSuccess);
+            System.exit(IrpUtils.EXIT_SUCCESS);
         }
 
         if (noTrue(commandLineArgs.url, commandLineArgs.serial, commandLineArgs.globalcache, commandLineArgs.tcp, commandLineArgs.udp) != 1) {
             System.err.println("Exactly one of --serial, --globalcache, --udp, --url, and --tcp must be given.");
-            System.exit(IrpUtils.exitUsageError);
+            System.exit(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         boolean didSomethingUseful = false;
@@ -116,7 +116,7 @@ public class MainString {
             } else if (commandLineArgs.url) {
                 if (commandLineArgs.ip == null) {
                     System.err.println("Must give a sensible hostname for URL.");
-                    System.exit(IrpUtils.exitUsageError);
+                    System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
 
                 // Can use either the framer or prefix/suffix in the UrlPort class.
@@ -128,22 +128,22 @@ public class MainString {
             } else if (commandLineArgs.tcp) {
                 if (commandLineArgs.portNumber == defaultPortNumber) {
                     System.err.println("Must give a sensible port number for TCP.");
-                    System.exit(IrpUtils.exitUsageError);
+                    System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
                 if (commandLineArgs.ip == null) {
                     System.err.println("Must give a sensible hostname for TCP.");
-                    System.exit(IrpUtils.exitUsageError);
+                    System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
                 tcpPort = new TcpSocketPort(commandLineArgs.ip, commandLineArgs.portNumber, commandLineArgs.timeout, commandLineArgs.verbose, TcpSocketPort.ConnectionMode.keepAlive);
                 hardware = tcpPort;
             } else if (commandLineArgs.udp) {
                 if (commandLineArgs.portNumber == defaultPortNumber) {
                     System.err.println("Must give a sensible port number for UDP.");
-                    System.exit(IrpUtils.exitUsageError);
+                    System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
                 if (commandLineArgs.ip == null) {
                     System.err.println("Must give a sensible hostname for UDP.");
-                    System.exit(IrpUtils.exitUsageError);
+                    System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
                 if (commandLineArgs.myIp == null) {
                     System.err.print("No own IP address given, let's try the environment...");
@@ -156,7 +156,7 @@ public class MainString {
             } else if (commandLineArgs.serial) {
                 if (commandLineArgs.device == null) {
                     System.err.println("Device name not given.");
-                    System.exit(IrpUtils.exitUsageError);
+                    System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
                 localSerialPortBuffered = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud,
                         commandLineArgs.timeout, commandLineArgs.verbose);
@@ -171,11 +171,11 @@ public class MainString {
                     commandLineArgs.toUpper);
 
             if (commandLineArgs.parameters.isEmpty() && didSomethingUseful)
-                    System.exit(IrpUtils.exitSuccess);
+                    System.exit(IrpUtils.EXIT_SUCCESS);
 
             if (hardware == null) {
                 System.err.println("hardware not assigned.");
-                System.exit(IrpUtils.exitFatalProgramFailure);
+                System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
             }
 
             hardware.open();
@@ -198,7 +198,7 @@ public class MainString {
                         commandLineArgs.escapeChar, commandLineArgs.commentChar);
                 ReadlineCommander.close();*/
                 System.err.println("This version does not support interactive mode; must give at least one argument");
-                System.exit(IrpUtils.exitUsageError);
+                System.exit(IrpUtils.EXIT_USAGE_ERROR);
             } else {
                 String command = framer.frame(join(commandLineArgs.parameters, " "));
                 String[] result = stringCommander.sendString(
@@ -209,10 +209,10 @@ public class MainString {
             hardware.close();
         } catch (IOException | PortInUseException | UnsupportedCommOperationException | HarcHardwareException ex) {
             System.err.println(ex.getMessage());
-            System.exit(IrpUtils.exitFatalProgramFailure);
+            System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
         } catch (NoSuchPortException ex) {
             System.err.println("No such port: " + ex.getMessage());
-            System.exit(IrpUtils.exitFatalProgramFailure);
+            System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
         }
     }
     private MainString() {

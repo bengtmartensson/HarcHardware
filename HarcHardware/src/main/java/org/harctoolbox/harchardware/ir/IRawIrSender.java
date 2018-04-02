@@ -18,9 +18,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrSignal;
 
 /**
  * Commands for IR senders being able to send IR signals.
@@ -37,10 +37,10 @@ public interface IRawIrSender {
      * @param transmitter
      * @return if false, command failed.
      * @throws NoSuchTransmitterException
-     * @throws IrpMasterException
      * @throws IOException
+     * @throws org.harctoolbox.ircore.InvalidArgumentException
      */
-    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws HarcHardwareException, NoSuchTransmitterException, IrpMasterException, IOException;
+    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws HarcHardwareException, NoSuchTransmitterException, IOException, InvalidArgumentException;
 
     /**
      * Returns a default Transmitter for the device. May be null if the device ignores the Transmitter argument in sendIr.

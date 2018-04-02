@@ -21,20 +21,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.devslashlirc.LircDeviceException;
 import org.harctoolbox.devslashlirc.Mode2LircDevice;
 import org.harctoolbox.devslashlirc.NotSupportedException;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 
 /**
  *
  */
 public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, IIrSenderStop {
+
+    static final Logger logger = Logger.getLogger(DevLirc.class.getName());
 
     public static final String DEV = "/dev";
     public static final String DEVSLASHLIRC = "/dev/lirc";
@@ -59,16 +60,16 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
                 9024, 4512, 564, 564, 564, 1692, 564, 564, 564, 1692, 564, 1692, 564, 1692, 564, 1692, 564, 564, 564, 1692, 564, 564, 564, 1692, 564, 564, 564, 564, 564, 564, 564, 564, 564, 1692, 564, 1692, 564, 1692, 564, 564, 564, 1692, 564, 1692, 564, 564, 564, 564, 564, 564, 564, 564, 564, 564, 564, 1692, 564, 564, 564, 564, 564, 1692, 564, 1692, 564, 1692, 564, 39756
             };
             int[] nec1_repeat = { 9024, 2256, 564, 96156 };
-            IrSignal yama_volume_down = new IrSignal(nec1_frequency, -1.0, new IrSequence(nec1_122_27),
-                    new IrSequence(nec1_repeat), null);
+            IrSignal yama_volume_down = new IrSignal(new IrSequence(nec1_122_27),
+                    new IrSequence(nec1_repeat), null, nec1_frequency, null);
             instance.open();
             System.out.println(instance);
             System.out.println(">>>>>>>>>>>>> Now send IR <<<<<<<<<<<<<<<");
             IrSequence irSequence = instance.receive();
             System.out.println(irSequence);
             instance.sendIr(yama_volume_down, 10, new LircTransmitter(1));
-        } catch (HarcHardwareException | IncompatibleArgumentException | LircDeviceException ex) {
-            Logger.getLogger(DevLirc.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (HarcHardwareException | LircDeviceException | OddSequenceLengthException ex) {
+            logger.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -158,7 +159,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
             if (verbose)
                 System.err.println("DevLirc sending " + count + " IrSignals: " + irSignal);
 
-            device.setSendCarrier((int) irSignal.getFrequency());
+            device.setSendCarrier((int) ModulatedIrSequence.getFrequencyWithDefault(irSignal.getFrequency()));
 
             sendIr(irSignal.getIntroSequence());
             for (int i = 0; i < irSignal.repeatsPerCountSemantic(count); i++) {
@@ -175,7 +176,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
     }
 
     @Override
-    public IrSequence receive() throws HarcHardwareException, IncompatibleArgumentException {
+    public IrSequence receive() throws HarcHardwareException, OddSequenceLengthException {
         int[] data;
         try {
             data = device.receive();
@@ -290,10 +291,10 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
     }
 
     @Override
-    public ModulatedIrSequence capture() throws HarcHardwareException, IncompatibleArgumentException {
+    public ModulatedIrSequence capture() throws HarcHardwareException, OddSequenceLengthException {
         IrSequence irSequence = receive();
         return irSequence.isEmpty() ? null
-                : new ModulatedIrSequence(irSequence, IrpUtils.defaultFrequency, IrpUtils.invalid);
+                : new ModulatedIrSequence(irSequence, ModulatedIrSequence.DEFAULT_FREQUENCY, null);
     }
 
     @Override

@@ -21,13 +21,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.*;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IWeb;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.Pronto;
+import org.harctoolbox.irp.IrpUtils;
 
 public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb {
 
@@ -80,7 +89,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
             }
         } catch (IOException ex) {
             System.err.println(ex.getMessage());
-            usage(IrpUtils.exitUsageError);
+            usage(IrpUtils.EXIT_USAGE_ERROR);
         }
     }
 
@@ -205,8 +214,8 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
             sock = new Socket();
             sock.connect(new InetSocketAddress(inetAddress, portNumber), timeout);
             sock.setSoTimeout(timeout);
-            outToServer = new PrintStream(sock.getOutputStream(), false, IrpUtils.dumbCharsetName);
-            inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream(), IrpUtils.dumbCharset));
+            outToServer = new PrintStream(sock.getOutputStream(), false, "US-ASCII");
+            inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream(), Charset.forName("US-ASCII")));
 
             outToServer.print("ASCI");
             try {
@@ -287,13 +296,12 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
         //}
     }
 
-    private boolean sendIr(IrSignal code, boolean repeat, Led led)
-            throws IncompatibleArgumentException, IOException {
-        return sendCcf(code.ccfString(), repeat, led);
+    private boolean sendIr(IrSignal code, boolean repeat, Led led) throws IOException {
+        return sendCcf(Pronto.toPrintString(code), repeat, led);
     }
 
     public boolean sendIr(IrSignal code, int count, Led led)
-            throws IncompatibleArgumentException, IOException {
+            throws IOException {
         boolean success = true;
         for (int c = 0; c < count; c++) {
             success = success && sendIr(code, c > 0, led);
@@ -303,7 +311,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
 
     @Override
     public boolean sendIr(IrSignal code, int count, Transmitter transmitter)
-            throws IrpMasterException, IOException, NoSuchTransmitterException {
+            throws IOException, NoSuchTransmitterException {
         if (!IrTransTransmitter.class.isInstance(transmitter))
             throw new NoSuchTransmitterException(transmitter);
         return sendIr(code, count, ((IrTransTransmitter) transmitter).led);

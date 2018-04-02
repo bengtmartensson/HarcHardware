@@ -28,15 +28,13 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
-import org.harctoolbox.IrpMaster.DecodeIR;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
-import org.harctoolbox.IrpMaster.Pronto;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
@@ -46,6 +44,11 @@ import org.harctoolbox.harchardware.comm.IBytesCommand;
 import org.harctoolbox.harchardware.comm.IWeb;
 import org.harctoolbox.harchardware.comm.TcpSocketChannel;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.Pronto;
+import org.harctoolbox.irp.IrpUtils;
 
 public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, ITransmitter, ICapture, IWeb {
 
@@ -114,9 +117,9 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     private static String globalCacheString(IrSignal code, int count, boolean compressed) {
-        int[] intro = code.getIntroPulses();
-        int[] repeat = code.getRepeatPulses();
-        return ((int)code.getFrequency()) + "," + count + "," + (1 + intro.length)
+        int[] intro = code.getIntroInts();
+        int[] repeat = code.getRepeatInts();
+        return (Long.toString(Math.round(code.getFrequency()))) + "," + count + "," + (1 + intro.length)
                 + (compressed ? gcCompressedJoiner(intro, repeat) : (gcJoiner(intro) + gcJoiner(repeat)));
     }
 
@@ -167,8 +170,9 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
      *
      * @param gcString
      * @return IrSignal representing the signal, with begin and repeat part.
+     * @throws org.harctoolbox.ircore.InvalidArgumentException
      */
-    public static IrSignal parse(String gcString) {
+    public static IrSignal parse(String gcString) throws InvalidArgumentException {
         String[] chunks = gcString.trim().split(",");
         if (chunks.length < 6)
             return null;
@@ -197,14 +201,14 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         System.err.println("GlobalCache [options] <command> [<argument>]");
         System.err.println("where options=-# <count>,-h <hostname>,-c <connector>,-m <module>,-b <baudrate>,-t <timeout>,-p <sendirstring>,-v,-B,-j");
         System.err.println("and command=send_ir,send_serial,listen_serial,set_relay,get_devices,get_version,set_blink,[set|get]_serial,[set|get]_ir,[set|get]_net,[get|set]_state,get_learn,ccf");
-        doExit(IrpUtils.exitUsageError);
+        doExit(IrpUtils.EXIT_USAGE_ERROR);
     }
 
     private static void doExit(int exitcode) {
         System.exit(exitcode);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InvalidArgumentException {
         //String str = "sendir,4:1,0,38380,1,69,347,173,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,1527,347,87,22,3692";
         String hostname = defaultGlobalCacheIP;
         int connector = 1;
@@ -282,7 +286,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         if (parserFood != null) {
             IrSignal sig = parse(parserFood);
             System.out.println(sig);
-            System.exit(IrpUtils.exitSuccess);
+            System.exit(IrpUtils.EXIT_SUCCESS);
         }
 
         String output = "";
@@ -321,7 +325,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
             }
 
             if (args.length - 1 < arg_i)
-                System.exit(IrpUtils.exitSuccess);
+                System.exit(IrpUtils.EXIT_SUCCESS);
 
             cmd = args[arg_i];
             arg = (args.length > arg_i + 1) ? args[arg_i + 1] : null;
@@ -335,7 +339,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                         gc.setBlink(1);
                     }   break;
                 case "get_devices":
-                    output = IrpUtils.join(gc.getDevices(), System.getProperty("line.separator"));
+                    output = String.join(System.getProperty("line.separator"), gc.getDevices());
                     break;
                 case "get_version":
                     output = gc.getVersion(module);
@@ -401,9 +405,9 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                 case "get_learn":
                     ModulatedIrSequence seq = gc.capture();
                     System.out.println(seq);
-                    if (seq != null) {
-                        System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
-                    }   break;
+//                    if (seq != null) {
+//                        System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
+//                    }   break;
                 case "listen_serial":
                     System.err.println("Press Ctrl-C to interrupt.");
                     // Never returns
@@ -427,9 +431,13 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         } catch (IOException e) {
             System.err.println("IOException occured.");
             System.exit(1);
-        } catch (IrpMasterException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
+//        } catch (IrpException e) {
+//            System.err.println(e.getMessage());
+//            System.exit(1);
+        //} catch (NoSuchTransmitterException ex) {
+        //    Logger.getLogger(GlobalCache.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Pronto.NonProntoFormatException ex) {
+            Logger.getLogger(GlobalCache.class.getName()).log(Level.SEVERE, null, ex);
         }
         System.err.println(output);
     }
@@ -725,16 +733,16 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return sendIr(code, count, gct.module, gct.port);
     }
 
-    public boolean sendIr(String ccf, int count, int module, int connector) throws IrpMasterException, NoSuchTransmitterException, IOException {
-        return sendIr(Pronto.ccfSignal(ccf), count, module, connector);
+    public boolean sendIr(String ccf, int count, int module, int connector) throws Pronto.NonProntoFormatException, InvalidArgumentException, NoSuchTransmitterException, IOException {
+        return sendIr(Pronto.parse(ccf), count, module, connector);
     }
 
-    public boolean sendCcf(String ccfString, int count, Transmitter transmitter) throws IOException, IrpMasterException, NoSuchTransmitterException {
+    public boolean sendCcf(String ccfString, int count, Transmitter transmitter) throws Pronto.NonProntoFormatException, InvalidArgumentException, NoSuchTransmitterException, IOException {
         GlobalCacheIrTransmitter gctransmitter = newGlobalCacheIrTransmitter(transmitter);
         return sendIr(ccfString, count, gctransmitter.module, gctransmitter.port);
     }
 
-    public boolean sendCcfRepeat(String ccfString, Transmitter transmitter) throws IOException, IrpMasterException, NoSuchTransmitterException {
+    public boolean sendCcfRepeat(String ccfString, Transmitter transmitter) throws IOException, NoSuchTransmitterException, Pronto.NonProntoFormatException, InvalidArgumentException {
         GlobalCacheIrTransmitter gctransmitter = newGlobalCacheIrTransmitter(transmitter);
         return sendIr(ccfString, repeatMax, gctransmitter.module, gctransmitter.port);
     }
@@ -789,7 +797,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
     // Appears not to be working on my iTachFlex, just returns ERR 005.
     public String setIr(int module, int connector, String modestr) throws IOException, NoSuchTransmitterException {
-        return sendCommand("set_IR," + transmitterAddress(module, connector) + "," + modestr.toUpperCase(IrpUtils.dumbLocale));
+        return sendCommand("set_IR," + transmitterAddress(module, connector) + "," + modestr.toUpperCase(Locale.US));
     }
 
     public String setIr(int module, int connector, IrConfiguration mode) throws IOException, NoSuchTransmitterException {
@@ -889,7 +897,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
-    public synchronized ModulatedIrSequence capture() throws HarcHardwareException {
+    public synchronized ModulatedIrSequence capture() throws HarcHardwareException, InvalidArgumentException {
         try {
             String[] result = sendCommand("get_IRL", 2, smallDelay, "IR Learner Enabled");
             if (!result[0].equals("IR Learner Enabled"))
@@ -915,7 +923,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     private InputStreamReader getJsonReader(String thing) throws IOException {
         URL url = new URL("http", hostIp, apiAddressFragment + thing);
         URLConnection urlConnection = url.openConnection();
-        return new InputStreamReader(urlConnection.getInputStream(), IrpUtils.dumbCharset);
+        return new InputStreamReader(urlConnection.getInputStream(), Charset.forName("US-ASCII"));
     }
 
     private JsonObject getJsonObject(String thing) throws IOException {
@@ -1055,7 +1063,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
         @Override
         public void sendString(String cmd) throws IOException {
-            sendBytes(cmd.getBytes(IrpUtils.dumbCharset));
+            sendBytes(cmd.getBytes(Charset.forName("US-ASCII")));
         }
 
         @Override

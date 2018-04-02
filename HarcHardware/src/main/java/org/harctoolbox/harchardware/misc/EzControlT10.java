@@ -21,11 +21,11 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Locale;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.XmlUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IWeb;
+import org.harctoolbox.irp.IrpUtils;
+import org.harctoolbox.irp.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -102,7 +102,7 @@ public class EzControlT10 implements IHarcHardware, IWeb {
                 + "or\n" + "ezcontrol [<options>] xml\n"
                 + "\nwhere options=-h <hostname>,-d <debugcode>,-# <count>,-v, -u\n"
                 + "and command=power_on,power_off,power_toggle,get_status,...");
-        doExit(IrpUtils.exitUsageError);
+        doExit(IrpUtils.EXIT_USAGE_ERROR);
     }
 
     private static void doExit(int exitcode) {
@@ -932,16 +932,16 @@ public class EzControlT10 implements IHarcHardware, IWeb {
     }
 
     private void generateXml() {
-        XmlUtils.printDOM(System.out, xmlConfig(), null);
+        XmlUtils.printDOM(System.out, xmlConfig(), null, null);
     }
 
     public void generateXml(File file) throws FileNotFoundException {
-        XmlUtils.printDOM(file, xmlConfig(), null);
+        XmlUtils.printDOM(file, xmlConfig(), null, null);
     }
 
     public void getConfiguration(File file) {
         try {
-            XmlUtils.printDOM(file, xmlConfig(), null);
+            XmlUtils.printDOM(file, xmlConfig(), null, null);
         } catch (FileNotFoundException e) {
             System.err.println(e.getMessage());
         }

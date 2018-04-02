@@ -21,7 +21,6 @@ import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
-import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IBytesCommand;
@@ -29,6 +28,7 @@ import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
 import org.harctoolbox.harchardware.ir.GlobalCache;
 import org.harctoolbox.harchardware.ir.NoSuchTransmitterException;
+import org.harctoolbox.irp.IrpUtils;
 
 public class SonySerialCommand {
 
@@ -67,7 +67,7 @@ public class SonySerialCommand {
                 port = gc.getSerialPort(1);
             } catch (IOException | NoSuchTransmitterException ex) {
                 System.err.println(ex.getMessage());
-                System.exit(IrpUtils.exitIoError);
+                System.exit(IrpUtils.EXIT_IO_ERROR);
             }
         } else {
             try {
@@ -75,13 +75,13 @@ public class SonySerialCommand {
                 ((IHarcHardware) port).open();
             } catch (NoSuchPortException | HarcHardwareException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
                 System.err.println(ex.getMessage());
-                System.exit(IrpUtils.exitIoError);
+                System.exit(IrpUtils.EXIT_IO_ERROR);
             }
         }
 
         if (port == null) {
             System.err.println("Could not set up the serial port, bailing out");
-            System.exit(IrpUtils.exitIoError);
+            System.exit(IrpUtils.EXIT_IO_ERROR);
         }
 
         int upper = 0x1;

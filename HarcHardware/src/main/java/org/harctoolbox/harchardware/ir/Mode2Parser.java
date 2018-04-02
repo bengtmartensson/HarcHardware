@@ -25,14 +25,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 
 /**
  * This class contains a parser for mode2 files.
@@ -44,7 +44,7 @@ public class Mode2Parser {
      * Added at the end of IR sequences that would otherwise end with a flash.
      */
     public static final int DUMMYGAP = 50000;
-    public static final int DEFAULTTHRESHOLD = 100000; // 100ms
+    public static final int DEFAULT_THRESHOLD = 100000; // 100ms
 
     public static void main(String[] args) {
         try {
@@ -53,7 +53,7 @@ public class Mode2Parser {
             List<IrSequence> seqs = parser.readIrSequencesUntilEOF();
             int i = 0;
             for (IrSequence part : seqs) {
-                System.out.println("signal_" + i + ":" + new IrSequence(part).toPrintString(true)); // Easy to parse for IrScrutinizer
+                System.out.println("signal_" + i + ":" + new IrSequence(part).toString(true)); // Easy to parse for IrScrutinizer
                 i++;
             }
         } catch (IOException ex) {
@@ -74,11 +74,11 @@ public class Mode2Parser {
     }
 
     public Mode2Parser(File file, boolean verbose, int threshold) throws FileNotFoundException {
-        this(new InputStreamReader(new FileInputStream(file), IrpUtils.dumbCharset), verbose, threshold);
+        this(new InputStreamReader(new FileInputStream(file), Charset.forName("US-ASCII")), verbose, threshold);
     }
 
     public Mode2Parser(InputStream stream, boolean verbose, int threshold) {
-        this(new InputStreamReader(stream, IrpUtils.dumbCharset), verbose, threshold);
+        this(new InputStreamReader(stream, Charset.forName("US-ASCII")), verbose, threshold);
     }
 
     public boolean isValid() {
@@ -173,7 +173,7 @@ public class Mode2Parser {
             data[i] = list.get(i);
         try {
             return new IrSequence(data);
-        } catch (IncompatibleArgumentException ex) {
+        } catch (OddSequenceLengthException ex) {
             assert false;
             return null;
         }

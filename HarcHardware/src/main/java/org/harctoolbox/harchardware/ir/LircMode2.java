@@ -21,15 +21,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.ircore.IrCoreUtils;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.ModulatedIrSequence;
 
 /**
  * This class runs an external program, for example mode2 of LIRC, in a separate process,
@@ -39,11 +39,11 @@ public final class LircMode2 implements IHarcHardware, ICapture, IReceive  {
     private final Mode2Parser parser;
 
     public LircMode2(Reader reader, boolean verbose, int endingTimeout) {
-        parser = new Mode2Parser(reader, verbose, (int) IrpUtils.milliseconds2microseconds * endingTimeout);
+        parser = new Mode2Parser(reader, verbose, (int) IrCoreUtils.milliseconds2microseconds(endingTimeout));
     }
 
     public LircMode2(InputStream inputStream, boolean verbose, int endingTimeout) {
-        this(new InputStreamReader(inputStream, IrpUtils.dumbCharset), verbose, endingTimeout);
+        this(new InputStreamReader(inputStream, Charset.forName("US-ASCII")), verbose, endingTimeout);
     }
 
     public LircMode2(boolean verbose, int endingTimeout) {
@@ -80,10 +80,10 @@ public final class LircMode2 implements IHarcHardware, ICapture, IReceive  {
     }
 
     @Override
-    public ModulatedIrSequence capture() throws HarcHardwareException, IOException, IrpMasterException {
+    public ModulatedIrSequence capture() throws HarcHardwareException, IOException {
         IrSequence irSequence = receive();
         return irSequence != null
-                ? new ModulatedIrSequence(irSequence, IrpUtils.defaultFrequency, IrpUtils.invalid)
+                ? new ModulatedIrSequence(irSequence, ModulatedIrSequence.DEFAULT_FREQUENCY, null)
                 : null;
     }
 
@@ -99,7 +99,7 @@ public final class LircMode2 implements IHarcHardware, ICapture, IReceive  {
 
     @Override
     public void setEndingTimeout(int timeout) {
-        parser.setThreshold((int)IrpUtils.milliseconds2microseconds*timeout);
+        parser.setThreshold((int)IrCoreUtils.milliseconds2microseconds(timeout));
     }
 
     @Override

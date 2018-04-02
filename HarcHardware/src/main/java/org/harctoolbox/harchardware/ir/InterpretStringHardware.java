@@ -21,14 +21,12 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import java.util.ArrayList;
-import org.harctoolbox.IrpMaster.DomainViolationException;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.InterpretString;
-import org.harctoolbox.IrpMaster.InvalidRepeatException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpUtils;
-import org.harctoolbox.IrpMaster.ParseException;
-import org.harctoolbox.IrpMaster.UnassignedException;
+import org.harctoolbox.ircore.InterpretString;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrCoreUtils;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.irp.IrpUtils;
 
 /**
  * The static function interpretString herein "extends" the static function
@@ -55,28 +53,22 @@ public class InterpretStringHardware {
      * @param absoluteTolerance
      * @param relativeTolerance
      * @return Generated IrSignal, or null if failed.
-     * @throws org.harctoolbox.IrpMaster.ParseException
-     * @throws org.harctoolbox.IrpMaster.IncompatibleArgumentException
-     * @throws org.harctoolbox.IrpMaster.UnassignedException
-     * @throws org.harctoolbox.IrpMaster.DomainViolationException
-     * @throws org.harctoolbox.IrpMaster.InvalidRepeatException
      */
-    public static IrSignal interpretString(String string, double frequency, boolean invokeRepeatFinder, boolean invokeCleaner,
-            double absoluteTolerance, double relativeTolerance)
-            throws ParseException, IncompatibleArgumentException, UnassignedException, DomainViolationException, InvalidRepeatException {
-        return string.startsWith(GlobalCache.sendIrPrefix)
-                ? GlobalCache.parse(string)
-                : InterpretString.interpretString(string, frequency, invokeRepeatFinder, invokeCleaner,
-                        absoluteTolerance, relativeTolerance);
+    public static IrSignal interpretString(String string, Double frequency, boolean invokeRepeatFinder, boolean invokeCleaner, double absoluteTolerance, double relativeTolerance) {
+        try {
+            IrSignal irSignal = GlobalCache.parse(string);
+            if (irSignal != null)
+                return irSignal;
+        } catch (InvalidArgumentException ex) {
+        }
+        return InterpretString.interpretString(string, frequency, invokeRepeatFinder, invokeCleaner, absoluteTolerance, relativeTolerance);
     }
 
-    public static IrSignal interpretString(String string, double frequency, boolean invokeRepeatFinder, boolean invokeCleaner)
-            throws ParseException, IncompatibleArgumentException, UnassignedException, DomainViolationException, InvalidRepeatException {
-        return string.startsWith(GlobalCache.sendIrPrefix)
-                ? GlobalCache.parse(string)
-                : InterpretString.interpretString(string, frequency, invokeRepeatFinder, invokeCleaner);
+    public static IrSignal interpretString(String string, double frequency, boolean invokeRepeatFinder, boolean invokeCleaner) {
+        return interpretString(string, frequency, invokeRepeatFinder, invokeCleaner, IrCoreUtils.DEFAULT_ABSOLUTE_TOLERANCE, IrCoreUtils.DEFAULT_RELATIVE_TOLERANCE);
     }
-    public static void main(String[] args) {
+
+    public static void main(String[] args) throws InvalidArgumentException {
 
         commandLineArgs = new CommandLineArgs();
         argumentParser = new JCommander(commandLineArgs);
@@ -87,26 +79,21 @@ public class InterpretStringHardware {
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
             argumentParser.usage();
-            System.exit(IrpUtils.exitUsageError);
+            System.exit(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         if (commandLineArgs.helpRequested) {
             argumentParser.usage();
-            System.exit(IrpUtils.exitSuccess);
+            System.exit(IrpUtils.EXIT_SUCCESS);
         }
 
-        String payload = IrpUtils.join(commandLineArgs.arguments, " ");
+        String payload = String.join(" ", commandLineArgs.arguments);
 
         IrSignal irSignal;
-        try {
-            irSignal = interpretString(payload, commandLineArgs.frequency,
-                    commandLineArgs.invokeRepeatFinder, commandLineArgs.invokeCleaner,
-                    commandLineArgs.absouteTolerance, commandLineArgs.relativeTolerance);
-            System.out.println(irSignal);
-        } catch (ParseException | IncompatibleArgumentException | UnassignedException | DomainViolationException | InvalidRepeatException ex) {
-            System.err.println(ex);
-            System.exit(IrpUtils.exitFatalProgramFailure);
-        }
+        irSignal = interpretString(payload, commandLineArgs.frequency,
+                commandLineArgs.invokeRepeatFinder, commandLineArgs.invokeCleaner,
+                commandLineArgs.absouteTolerance, commandLineArgs.relativeTolerance);
+        System.out.println(irSignal);
     }
 
     private InterpretStringHardware() {
@@ -115,7 +102,7 @@ public class InterpretStringHardware {
     private final static class CommandLineArgs {
         private final static int defaultTimeout = 2000;
 
-        @Parameter(names = {"-h", "-?", "--clean"}, description = "Invoke help")
+        @Parameter(names = {"-h", "-?"}, description = "Invoke help")
         private boolean helpRequested = false;
 
         @Parameter(names = {"-c", "--clean"}, description = "Invoke cleaner")
@@ -125,16 +112,15 @@ public class InterpretStringHardware {
         private boolean invokeRepeatFinder = false;
 
         @Parameter(names = {"-f", "--frequency"}, description = "Modulation frequency")
-        private double frequency = IrpUtils.defaultFrequency;
+        private double frequency = ModulatedIrSequence.DEFAULT_FREQUENCY;
 
         @Parameter(names = {"-a", "--absolutetolearance"}, description = "Absoulte Tolerance")
-        private double absouteTolerance = IrpUtils.defaultAbsoluteTolerance;
+        private double absouteTolerance = IrCoreUtils.DEFAULT_ABSOLUTE_TOLERANCE;
 
         @Parameter(names = {"-r", "--relativetolearance"}, description = "Relative Tolerance")
-        private double relativeTolerance = IrpUtils.defaultRelativeTolerance;
+        private double relativeTolerance = IrCoreUtils.DEFAULT_RELATIVE_TOLERANCE;
 
         @Parameter(description = "[arguments]")
         private ArrayList<String> arguments = new ArrayList<>(8);
     }
-
 }

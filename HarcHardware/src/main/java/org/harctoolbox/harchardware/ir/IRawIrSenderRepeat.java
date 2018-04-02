@@ -18,8 +18,7 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
+import org.harctoolbox.ircore.IrSignal;
 
 /**
  * Commands for IR senders being able to send IR signals repeating "forever".
@@ -37,7 +36,6 @@ public interface IRawIrSenderRepeat extends IRawIrSender {
      * @return if false, command failed.
      * @throws NoSuchTransmitterException
      * @throws IOException
-     * @throws IrpMasterException
      */
-    public boolean sendIrRepeat(IrSignal irSignal, Transmitter transmitter) throws NoSuchTransmitterException, IOException, IrpMasterException;
+    public boolean sendIrRepeat(IrSignal irSignal, Transmitter transmitter) throws NoSuchTransmitterException, IOException;
 }

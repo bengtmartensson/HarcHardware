@@ -18,9 +18,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrpMasterException;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 
 /**
  * This hardware can receive an IR signal for deployment.
@@ -35,9 +35,9 @@ public interface IReceive extends IIrReader {
      * @return Captured sequence, or null by timeout.
      * @throws HarcHardwareException if the device is not in valid/open state.
      * @throws IOException
-     * @throws IrpMasterException
+     * @throws org.harctoolbox.ircore.OddSequenceLengthException
      */
-    public IrSequence receive() throws HarcHardwareException, IOException, IrpMasterException;
+    public IrSequence receive() throws HarcHardwareException, IOException, OddSequenceLengthException;
 
     /**
      * Signals the receiving device that it should stop receiving.

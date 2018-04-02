@@ -20,13 +20,12 @@ package org.harctoolbox.harchardware.ir;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSequence;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 
 /**
  * A dummy device just for testing.
@@ -44,8 +43,8 @@ public class IrDummy implements IHarcHardware, IRawIrSender, IIrSenderStop, ITra
     static {
         try {
             irSequence = new IrSequence(necdata);
-            modulatedIrSequence = new ModulatedIrSequence(necdata, 38400);
-        } catch (IncompatibleArgumentException ex) {
+            modulatedIrSequence = new ModulatedIrSequence(new IrSequence(necdata), 38400.0, null);
+        } catch (OddSequenceLengthException ex) {
             Logger.getLogger(IrDummy.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -108,7 +107,7 @@ public class IrDummy implements IHarcHardware, IRawIrSender, IIrSenderStop, ITra
     }
 
     @Override
-    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws HarcHardwareException, NoSuchTransmitterException, IrpMasterException, IOException {
+    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws HarcHardwareException, NoSuchTransmitterException, IOException {
         logger.log(Level.INFO, "sendIr: {0} #{1} {2}", new Object[]{irSignal.toString(true), count, transmitter});
         return dummySuccess;
     }
@@ -135,7 +134,7 @@ public class IrDummy implements IHarcHardware, IRawIrSender, IIrSenderStop, ITra
     }
 
     @Override
-    public ModulatedIrSequence capture() throws HarcHardwareException, IOException, IrpMasterException {
+    public ModulatedIrSequence capture() throws HarcHardwareException, IOException {
         return modulatedIrSequence;
     }
 
@@ -183,7 +182,7 @@ public class IrDummy implements IHarcHardware, IRawIrSender, IIrSenderStop, ITra
     }
 
     @Override
-    public IrSequence receive() throws HarcHardwareException, IOException, IrpMasterException {
+    public IrSequence receive() throws HarcHardwareException, IOException {
         return irSequence;
     }
 

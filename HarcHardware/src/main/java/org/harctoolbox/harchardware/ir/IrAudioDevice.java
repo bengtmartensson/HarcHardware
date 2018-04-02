@@ -19,12 +19,11 @@ package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
 import javax.sound.sampled.LineUnavailableException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
-import org.harctoolbox.IrpMaster.Wave;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
 
 /**
  * This class does something interesting and useful. Or not...
@@ -87,7 +86,7 @@ public class IrAudioDevice implements IHarcHardware, IRawIrSender {
     }
 
     @Override
-    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IrpMasterException, IOException, HarcHardwareException {
+    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IOException, HarcHardwareException, InvalidArgumentException {
         ModulatedIrSequence seq = irSignal.toModulatedIrSequence(count);
         Wave wave = new Wave(seq, sampleFrequency, sampleSize, channels, bigEndian, omitTail, square, divide);
         try {

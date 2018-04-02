@@ -30,11 +30,11 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Version;
 import org.harctoolbox.harchardware.comm.TcpSocketChannel;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
+import org.harctoolbox.irp.IrpUtils;
 
 /**
  * A <a href="http://www.lirc.org">LIRC</a> client, talking to a remote LIRC
@@ -60,7 +60,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
         StringBuilder str = new StringBuilder(256);
         argumentParser.usage(str);
 
-        (exitcode == IrpUtils.exitSuccess ? System.out : System.err).println(str);
+        (exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err).println(str);
         doExit(exitcode); // placifying FindBugs...
     }
 
@@ -71,7 +71,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
     private static void doExit(boolean success) {
         if (!success)
             System.err.println("Failed");
-        System.exit(success ? IrpUtils.exitSuccess : IrpUtils.exitIoError);
+        System.exit(success ? IrpUtils.EXIT_SUCCESS : IrpUtils.EXIT_IO_ERROR);
     }
     private static void doExit(String message, int exitcode) {
         System.err.println(message);
@@ -106,11 +106,11 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
             argumentParser.parse(args);
         } catch (ParameterException ex) {
             System.err.println(ex.getMessage());
-            usage(IrpUtils.exitUsageError);
+            usage(IrpUtils.EXIT_USAGE_ERROR);
         }
 
         if (commandLineArgs.helpRequested)
-            usage(IrpUtils.exitSuccess);
+            usage(IrpUtils.EXIT_SUCCESS);
 
         if (commandLineArgs.versionRequested) {
             System.out.println(Version.versionString);
@@ -125,11 +125,11 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
 
             if (commandLineArgs.listen) {
                 lircClient.readLoop();
-                System.exit(IrpUtils.exitSuccess);
+                System.exit(IrpUtils.EXIT_SUCCESS);
             }
 
             if (argumentParser.getParsedCommand() == null)
-                usage(IrpUtils.exitUsageError);
+                usage(IrpUtils.EXIT_USAGE_ERROR);
             boolean success = true;
             switch (argumentParser.getParsedCommand()) {
                 case "send_once":
@@ -155,27 +155,27 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
                     break;
                 case "set_transmitters":
                     if (cmdSetTransmitters.transmitters.size() < 1)
-                        doExit("Command \"set_transmitters\" requires at least one argument", IrpUtils.exitUsageError);
+                        doExit("Command \"set_transmitters\" requires at least one argument", IrpUtils.EXIT_USAGE_ERROR);
 
                     LircTransmitter xmitter = new LircTransmitter(cmdSetTransmitters.transmitters);
                     success = lircClient.setTransmitters(xmitter);
                     break;
                 case "simulate":
-                    doExit("Command \"simulate\" not implemented", IrpUtils.exitUsageError);
+                    doExit("Command \"simulate\" not implemented", IrpUtils.EXIT_USAGE_ERROR);
                     break;
                 case "version":
                     System.out.println(lircClient.getVersion());
                     break;
                 default:
-                    doExit("Unknown command", IrpUtils.exitUsageError);
+                    doExit("Unknown command", IrpUtils.EXIT_USAGE_ERROR);
             }
             doExit(success);
         } catch (IOException ex) {
-            doExit(ex.getMessage(), IrpUtils.exitFatalProgramFailure);
+            doExit(ex.getMessage(), IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
         } catch (IndexOutOfBoundsException ex) {
-            doExit("Too few arguments to command", IrpUtils.exitUsageError);
+            doExit("Too few arguments to command", IrpUtils.EXIT_USAGE_ERROR);
         } catch (NoSuchTransmitterException ex) {
-            doExit("No such transmitter " + ex.getMessage(), IrpUtils.exitSemanticUsageError);
+            doExit("No such transmitter " + ex.getMessage(), IrpUtils.EXIT_SEMANTIC_USAGE_ERROR);
         }
     }
     private String lircServerIp;

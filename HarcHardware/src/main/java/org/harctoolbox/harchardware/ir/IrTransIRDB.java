@@ -22,8 +22,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import org.harctoolbox.IrpMaster.IrpUtils;
+import org.harctoolbox.irp.IrpUtils;
 
 public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
     private final static String sendFlashedCommandAck = "**00018 RESULT OK";
@@ -90,7 +91,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
-            usage(IrpUtils.exitUsageError);
+            usage(IrpUtils.EXIT_USAGE_ERROR);
         }
     }
 
@@ -118,8 +119,8 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
         //Socket sock = new Socket(InetAddress.getByName(irTransIP), portNumber);
         Socket sock = new Socket();
         sock.connect(new InetSocketAddress(inetAddress, portNumber), timeout);
-        PrintStream outToServer = new PrintStream(sock.getOutputStream(), false, IrpUtils.dumbCharsetName);
-        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream(), IrpUtils.dumbCharset));
+        PrintStream outToServer = new PrintStream(sock.getOutputStream(), false, "US-ASCII");
+        BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream(), Charset.forName("US-ASCII")));
 
         ArrayList<String> items = new ArrayList<>(64);
         try {

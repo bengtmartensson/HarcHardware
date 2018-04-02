@@ -21,12 +21,11 @@ import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
-import org.harctoolbox.IrpMaster.IncompatibleArgumentException;
-import org.harctoolbox.IrpMaster.IrSignal;
-import org.harctoolbox.IrpMaster.IrpMasterException;
-import org.harctoolbox.IrpMaster.ModulatedIrSequence;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
+import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.Pronto;
 
 /**
  * This class models a serial device that takes text commands from a serial port, like the Arduino.
@@ -81,7 +80,7 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
     }
 
     @Override
-    public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IrpMasterException, IOException {
+    public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IOException {
         String payload = formatString(irSignal, count);
         serialPort.sendString(payload);
         if (verbose)
@@ -97,15 +96,10 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
         str.append(" ");
         ModulatedIrSequence seq = irSignal.toModulatedIrSequence(count);
         if (raw) {
-            str.append(seq.toPrintString(useSigns, !useSigns, separator));
+            str.append(seq.toString(useSigns));
         } else {
-            try {
-                IrSignal signal = new IrSignal(seq.getFrequency(), seq.getDutyCycle(), seq, null, null);
-                str.append(signal.ccfString());
-            } catch (IncompatibleArgumentException ex) {
-                // should not happen, really
-                throw new RuntimeException("Silly IrSignal/CCF");
-            }
+            IrSignal signal = new IrSignal(seq, seq.getFrequency(), seq.getDutyCycle());
+            str.append(Pronto.toPrintString(irSignal));
         }
         str.append(lineEnding);
         return str.toString();
