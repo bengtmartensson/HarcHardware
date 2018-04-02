@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Locale;
+import org.harctoolbox.IrpMaster.IrpUtils;
 import org.harctoolbox.IrpMaster.XmlUtils;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
