@@ -463,7 +463,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
 
     private String readString(int length) throws IOException {
         byte[] buf = serialPort.readBytes(length);
-        return new String(buf, 0, length, Charset.forName("US_ASCII"));
+        return new String(buf, 0, length, Charset.forName("US-ASCII"));
     }
 
     private int readByte() throws IOException {

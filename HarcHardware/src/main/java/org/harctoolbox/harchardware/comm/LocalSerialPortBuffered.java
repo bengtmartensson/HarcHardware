@@ -82,14 +82,14 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     @Override
     public void open() throws HarcHardwareException, IOException {
         super.open();
-        bufferedInStream = new BufferedReader(new InputStreamReader(inStream, Charset.forName("US_ASCII")));
+        bufferedInStream = new BufferedReader(new InputStreamReader(inStream, Charset.forName("US-ASCII")));
     }
 
     @Override
     public void sendString(String cmd) throws IOException {
         if (verbose)
             System.err.println("LocalSerialPortBuffered.sendString: Sent '" + Utils.escapeCommandLine(cmd) + "'.");
-        sendBytes(cmd.getBytes(Charset.forName("US_ASCII")));
+        sendBytes(cmd.getBytes(Charset.forName("US-ASCII")));
     }
 
     //*@Override
