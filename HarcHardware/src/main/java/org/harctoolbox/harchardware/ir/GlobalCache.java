@@ -422,7 +422,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         } catch (HarcHardwareException e) {
             System.err.println(e.getMessage());
         } catch (UnknownHostException e) {
-            System.err.println("Host " + hostname + " does not resolve.");
+            System.err.println("Host \"" + hostname + "\" does not resolve.");
             System.exit(1);
         } catch (IOException e) {
             System.err.println("IOException occured.");
@@ -620,7 +620,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     @SuppressWarnings("SleepWhileHoldingLock")
     private synchronized String[] sendCommand(String cmd, int noLines, int delay, String expectedFirstLine) throws IOException {
         if (verbose)
-            System.err.println("Sending command " + cmd + " to GlobalCache (" + hostIp + ")");
+            System.err.println("Sending command \"" + cmd + "\" to GlobalCache (" + hostIp + ")");
 
         tcpSocketChannel.connect();
         if (noLines != 0)
