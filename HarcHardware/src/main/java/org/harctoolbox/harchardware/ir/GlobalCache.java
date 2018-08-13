@@ -775,6 +775,16 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return modules;
     }
 
+    public int getModuleSecondNumber(int moduleNumber) {
+        for (String deviceResult : getdevicesResult) {
+            String[] str = deviceResult.split(",");
+            int actual = Integer.parseInt(str[1]);
+            if (actual == moduleNumber)
+                return Integer.parseInt(str[2].substring(0, 1));
+        }
+        throw new IllegalArgumentException("Non-existing module: " + moduleNumber);
+    }
+
     public final ArrayList<Integer> getIrModules() {
         return getModules("IR");
     }
