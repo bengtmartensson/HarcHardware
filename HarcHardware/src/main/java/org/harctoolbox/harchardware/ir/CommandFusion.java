@@ -323,7 +323,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     }
 
     @Override
-    public ModulatedIrSequence capture() throws IOException, OddSequenceLengthException, InvalidArgumentException {
+    public ModulatedIrSequence capture() throws IOException, InvalidArgumentException {
         stopRequested = false;
         Status status;
         do {
