@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.harctoolbox</groupId>
     <artifactId>HarcHardwareBundle</artifactId>
-    <version>1.5</version>  <!-- No need to update when HarcHardware changes -->
+    <version>2.0.0</version>  <!-- No need to update when HarcHardware changes -->
     <name>HarcHardwareBundle</name>
     <packaging>pom</packaging>
     <licenses>
