@@ -64,7 +64,7 @@ public class LircCcfClient extends LircClient implements IRawIrSender {
 
     @Override
     public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws IOException, NoSuchTransmitterException {
-        return sendCcf(Pronto.toPrintString(irSignal), count, transmitter);
+        return sendCcf(Pronto.toString(irSignal), count, transmitter);
     }
 
     @Override

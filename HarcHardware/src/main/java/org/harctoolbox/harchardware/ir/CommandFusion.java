@@ -117,7 +117,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     private static byte[] encode(IrSignal irSignal, int count) {
         if (irSignal == null)
             throw new NullPointerException("irSignal cannot be null");
-        String data = "P0" + Integer.toString(PORTID) + ":RAW:" + Pronto.toPrintString(irSignal.toOneShot(count));
+        String data = "P0" + Integer.toString(PORTID) + ":RAW:" + Pronto.toString(irSignal.toOneShot(count));
         return encode(SENDCOMMAND, data);
     }
 

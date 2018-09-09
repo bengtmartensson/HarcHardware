@@ -99,7 +99,7 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
             str.append(seq.toString(useSigns));
         } else {
             IrSignal signal = new IrSignal(seq, seq.getFrequency(), seq.getDutyCycle());
-            str.append(Pronto.toPrintString(irSignal));
+            str.append(Pronto.toString(irSignal));
         }
         str.append(lineEnding);
         return str.toString();

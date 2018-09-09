@@ -297,7 +297,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     }
 
     private boolean sendIr(IrSignal code, boolean repeat, Led led) throws IOException {
-        return sendCcf(Pronto.toPrintString(code), repeat, led);
+        return sendCcf(Pronto.toString(code), repeat, led);
     }
 
     public boolean sendIr(IrSignal code, int count, Led led)
