@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2015, 2016 Bengt Martensson.
+Copyright (C) 2015, 2016, 2018 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +17,13 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
+import gnu.io.NoSuchPortException;
+import gnu.io.PortInUseException;
+import gnu.io.UnsupportedCommOperationException;
+import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.List;
@@ -30,16 +36,21 @@ import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
+import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.OddSequenceLengthException;
+import org.harctoolbox.ircore.Pronto;
+import org.harctoolbox.ircore.ThisCannotHappenException;
 
 /**
  *
  * @param <T>
  */
-public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implements IHarcHardware, IReceive, IRawIrSender, IRawIrSenderRepeat, IRemoteCommandIrSender, IIrSenderStop, ITransmitter, ICapture, ICommandLineDevice {
+public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implements IHarcHardware, IReceive, IRawIrSender, IRawIrSenderRepeat, IRemoteCommandIrSender, IIrSenderStop, ITransmitter, ICapture, ICommandLineDevice, Closeable {
+
+    private final static Logger logger = Logger.getLogger(GirsClient.class.getName());
 
     private final static String defaultLineEnding = "\r";
     private final static String sendCommand = "send";
@@ -61,75 +72,43 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        //testGirsSerial("/dev/arduino", 115200, true);
-        testGirsTcp("arduino", 33333, true);
+        boolean verbose = false;
+        if (args[0].startsWith("/dev/") || args[0].toUpperCase(Locale.US).startsWith("COM")) {
+            int baud = args.length < 2 ? 115200 : Integer.parseInt(args[1]);
+            testGirsSerial(args[0], baud, verbose);
+        } else {
+            int port = args.length < 2 ? 33333 : Integer.parseUnsignedInt(args[1]);
+            testGirsTcp(okString, port, verbose);
+        }
     }
 
     private static void testGirsTcp(String ip, int portnumber, boolean verbose) {
-        GirsClient<TcpSocketPort> gc = null;
-        try {
-            TcpSocketPort tcp = new TcpSocketPort(ip, portnumber, verbose, TcpSocketPort.ConnectionMode.keepAlive);
-            gc = new GirsClient<>(tcp);
+        try (TcpSocketPort tcp = new TcpSocketPort(ip, portnumber, verbose, TcpSocketPort.ConnectionMode.keepAlive);
+            GirsClient<TcpSocketPort> gc = new GirsClient<>(tcp)) {
             testGirs(gc);
         } catch (HarcHardwareException | IOException ex) {
-            Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            if (gc != null)
-                try {
-                    gc.close();
-                } catch (IOException ex) {
-                }
+            logger.log(Level.SEVERE, null, ex);
         }
     }
 
-//    private static void testGirsSerial(String portName, int baud, boolean verbose) {
-//        GirsClient<LocalSerialPortBuffered> w = null;
-//        try {
-//            w = new GirsClient<>(new LocalSerialPortBuffered(portName, 115200, verbose));
-//            testGirs(w);
-//        } catch (IOException ex) {
-//            System.err.println("exception: " + ex.toString() + ex.getMessage());
-//            //ex.printStackTrace();
-//        } catch (NoSuchPortException ex) {
-//            System.err.println("No such port: " + portName);
-//        } catch (HarcHardwareException | UnsupportedCommOperationException ex) {
-//            System.err.println(ex.getMessage());
-//        } catch (PortInUseException ex) {
-//            System.err.println("Port " + portName + " in use.");
-//        } finally {
-//            if (w != null)
-//                try {
-//                    w.close();
-//                } catch (IOException ex) {
-//                }
-//        }
-//    }
-
-    private static void testGirs(GirsClient<?> gc) {
-        try {
-            gc.open();
-            System.out.println(gc.getVersion());
-            if (gc.hasModule("lcd"))
-                gc.setLcd("Now send an IR signal");
-            //ModulatedIrSequence seq = gc.capture();
-            IrSequence irSequence = gc.receive();
-            if (irSequence == null) {
-                System.err.println("No input");
-                gc.close();
-                System.exit(1);
-            }
-            ModulatedIrSequence seq = new ModulatedIrSequence(irSequence, ModulatedIrSequence.DEFAULT_FREQUENCY);
-            System.out.println(seq);
-            //DecodeIR.invoke(seq);
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            gc.close();
-        } catch (IOException | HarcHardwareException ex) {
-            Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
+    private static void testGirsSerial(String portName, int baud, boolean verbose) {
+        try (LocalSerialPortBuffered serial = new LocalSerialPortBuffered(portName, baud, verbose);
+            GirsClient<LocalSerialPortBuffered> gc = new GirsClient<>(serial)) {
+            testGirs(gc);
+        } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
+            logger.log(Level.SEVERE, null, ex);
         }
+    }
+
+    private static void testGirs(GirsClient<?> girsClient) throws IOException, HarcHardwareException {
+        girsClient.open();
+        girsClient.getModules().forEach((module) -> {
+            girsClient.testModule(module);
+        });
+    }
+
+    private static String capitalize(String module) {
+        return module.substring(0, 1).toUpperCase(Locale.US) + module.substring(1);
     }
 
     private String version;
@@ -151,6 +130,88 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         this.verbose = false;
         this.hardware = hardware;
         this.useReceiveForCapture = false;
+    }
+
+    private void testModule(String module) {
+        if (!hasModule(module)) {
+            // should never happen really.
+            logger.log(Level.SEVERE, "module {0} not implemented", module);
+            return;
+        }
+
+        try {
+            String name = "test" + capitalize(module);
+            Method method = GirsClient.class.getMethod(name);
+            logger.log(Level.INFO, "Testing {0}", module);
+            method.invoke(this);
+        } catch (NoSuchMethodException ex) {
+            logger.log(Level.WARNING, "No test for module {0} found.", module);
+        } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void testLcd() throws IOException, HarcHardwareException {
+        setLcd("LCD lcd");
+    }
+
+    public void testBase() throws IOException {
+        logger.log(Level.INFO, "Version: {0}", getVersion());
+    }
+
+    public void testTransmit() throws IOException, HarcHardwareException {
+        try {
+            IrSignal rc5_0_0 = Pronto.parse("0000 0073 0000 000D 0020 0020 0040 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0CC8");
+            sendIr(rc5_0_0, 1);
+        } catch (Pronto.NonProntoFormatException | InvalidArgumentException ex) {
+            throw new ThisCannotHappenException();
+        }
+    }
+
+    @SuppressWarnings("SleepWhileInLoop")
+    public void testLed() throws IOException, InterruptedException {
+        for (int i = 1; i <= 8; i++) {
+            try {
+                logger.log(Level.FINE, "Testing LED #{0}", i);
+                setLed(i, true);
+                Thread.sleep(1000);
+                setLed(i, false);
+            } catch (HarcHardwareException ex) {
+                logger.log(Level.WARNING, "Failed for LED #{0}, not present?", i);
+            }
+        }
+    }
+
+    public void testReceive() throws HarcHardwareException, IOException {
+        System.out.println("Now send an IR signal to the demodulating receiver");
+        IrSequence irSequence = receive();
+        if (irSequence == null) {
+            logger.log(Level.WARNING, "No input");
+        } else {
+            ModulatedIrSequence seq = new ModulatedIrSequence(irSequence, ModulatedIrSequence.DEFAULT_FREQUENCY);
+            logger.log(Level.INFO, seq.toString(true));
+        }
+    }
+
+    public void testCapture() throws HarcHardwareException, IOException, OddSequenceLengthException {
+        System.out.println("Now send an IR signal to the non-demodulating receiver");
+        ModulatedIrSequence irSequence = capture();
+        if (irSequence == null) {
+            logger.warning("No input detected");
+        } else {
+            logger.log(Level.INFO, irSequence.toString(true));
+        }
+    }
+
+    public void testParameters() throws IOException, HarcHardwareException {
+        String parameterName = "capturesize";
+        long newValue = 123L;
+        getParameter(parameterName);
+        //System.out.println(old);
+        setParameter(parameterName, newValue);
+        long newVal = getParameter(parameterName);
+        if (newVal != newValue)
+            logger.log(Level.SEVERE, "Parameters failed");
     }
 
     public void setUseReceiveForCapture(boolean val) throws HarcHardwareException {
@@ -271,7 +332,11 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     @Override
-    public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IOException, HarcHardwareException {
+    public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws IOException, HarcHardwareException {
+       return sendIr(irSignal, count);
+    }
+
+    public synchronized boolean sendIr(IrSignal irSignal, int count) throws IOException, HarcHardwareException {
         String payload = formatSendString(irSignal, count);
         hardware.sendString(payload + lineEnding);
         if (verbose)
@@ -552,7 +617,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     public void setLed(int led, boolean state) throws IOException, HarcHardwareException {
-        sendStringWaitOk(ledCommand + separator + led + separator + (state ? "1" : "0"));
+        sendStringWaitOk(ledCommand + separator + led + separator + (state ? "on" : "off"));
     }
 
     public void setLed(int led, int flashTime) {
@@ -583,5 +648,21 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         answer = answer.trim();
         if (!answer.startsWith(okString))
             throw new HarcHardwareException("No \"" + okString + "\" received, instead \"" + answer + "\".");
+    }
+
+    private long getParameter(String parameterName) throws IOException, HarcHardwareException {
+        hardware.sendString("parameter " + parameterName + lineEnding);
+        String answer = readString(true);
+        if (answer == null)
+            throw new HarcHardwareException("No answer received.");
+        long value = Long.parseLong(answer.split("=")[1]);
+        return value;
+    }
+
+    private void setParameter(String parameterName, long newValue) throws IOException, HarcHardwareException {
+        hardware.sendString("parameter " + parameterName + " " + Long.toString(newValue) + lineEnding);
+        String answer = readString(true);
+        if (answer == null)
+            throw new HarcHardwareException("No answer received.");
     }
 }
