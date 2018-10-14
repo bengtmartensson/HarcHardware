@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -78,15 +79,19 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             testGirsSerial(args[0], baud, verbose);
         } else {
             int port = args.length < 2 ? 33333 : Integer.parseUnsignedInt(args[1]);
-            testGirsTcp(okString, port, verbose);
+            testGirsTcp(args[0], port, verbose);
         }
     }
 
     private static void testGirsTcp(String ip, int portnumber, boolean verbose) {
         try (TcpSocketPort tcp = new TcpSocketPort(ip, portnumber, verbose, TcpSocketPort.ConnectionMode.keepAlive);
             GirsClient<TcpSocketPort> gc = new GirsClient<>(tcp)) {
-            testGirs(gc);
-        } catch (HarcHardwareException | IOException ex) {
+            gc.testGirs();
+        } catch (HarcHardwareException ex) {
+            logger.log(Level.SEVERE, null, ex);
+        } catch (UnknownHostException ex) {
+            logger.log(Level.SEVERE, "Unknown host: {0}", ip);
+        } catch (IOException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
     }
@@ -94,17 +99,15 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private static void testGirsSerial(String portName, int baud, boolean verbose) {
         try (LocalSerialPortBuffered serial = new LocalSerialPortBuffered(portName, baud, verbose);
             GirsClient<LocalSerialPortBuffered> gc = new GirsClient<>(serial)) {
-            testGirs(gc);
+            gc.testGirs();
         } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
     }
 
-    private static void testGirs(GirsClient<?> girsClient) throws IOException, HarcHardwareException {
-        girsClient.open();
-        girsClient.getModules().forEach((module) -> {
-            girsClient.testModule(module);
-        });
+    private void testGirs() throws IOException, HarcHardwareException {
+        open();
+        getModules().forEach((module) -> this.testModule(module));
     }
 
     private static String capitalize(String module) {
@@ -140,13 +143,14 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         }
 
         try {
+            Thread.sleep(1000);
             String name = "test" + capitalize(module);
             Method method = GirsClient.class.getMethod(name);
             logger.log(Level.INFO, "Testing {0}", module);
             method.invoke(this);
         } catch (NoSuchMethodException ex) {
             logger.log(Level.WARNING, "No test for module {0} found.", module);
-        } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+        } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | InterruptedException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
     }
@@ -184,6 +188,8 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     public void testReceive() throws HarcHardwareException, IOException {
         System.out.println("Now send an IR signal to the demodulating receiver");
+        if (hasModule("lcd"))
+            setLcd("Send signal to demod.");
         IrSequence irSequence = receive();
         if (irSequence == null) {
             logger.log(Level.WARNING, "No input");
@@ -195,6 +201,8 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     public void testCapture() throws HarcHardwareException, IOException, OddSequenceLengthException {
         System.out.println("Now send an IR signal to the non-demodulating receiver");
+        if (hasModule("lcd"))
+            setLcd("Send signal to non-demod.");
         ModulatedIrSequence irSequence = capture();
         if (irSequence == null) {
             logger.warning("No input detected");
