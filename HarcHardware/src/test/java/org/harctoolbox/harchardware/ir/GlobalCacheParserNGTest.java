@@ -5,9 +5,14 @@
  */
 package org.harctoolbox.harchardware.ir;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.IrSignalParser;
 import org.harctoolbox.ircore.ModulatedIrSequence;
+import org.harctoolbox.ircore.MultiParser;
+import org.harctoolbox.ircore.ProntoParser;
 import static org.testng.Assert.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -53,16 +58,17 @@ public class GlobalCacheParserNGTest {
         System.out.println("toIrSignal");
         Double fallbackFrequency = null;
         Double dummyGap = null;
-        GlobalCacheParser instance = new GlobalCacheParser(sendir);
+        MultiParser instance = mkParser(sendir);
         IrSignal result = instance.toIrSignal(fallbackFrequency, dummyGap);
         assertEquals(result.getRepeatLength(), 4);
-        instance = new GlobalCacheParser(sendirSilly);
+        instance = mkParser(sendirSilly);
+        result = null;
         try {
             result = instance.toIrSignal(fallbackFrequency, dummyGap);
             fail();
         } catch (InvalidArgumentException | NumberFormatException ex) {
         }
-        instance = new GlobalCacheParser(pronto);
+        instance = mkParser(pronto);
         result = instance.toIrSignal(fallbackFrequency, dummyGap);
         assertEquals(result.getRepeatLength(), 4);
     }
@@ -76,8 +82,15 @@ public class GlobalCacheParserNGTest {
         System.out.println("toIrSignal");
         Double fallbackFrequency = null;
         Double dummyGap = null;
-        GlobalCacheParser instance = new GlobalCacheParser(sendir);
+        MultiParser instance = mkParser(sendir);
         ModulatedIrSequence result = instance.toModulatedIrSequence(fallbackFrequency, dummyGap);
         assertEquals(result.getLength(), 72);
      }
+
+    private MultiParser mkParser(String source) {
+        List<IrSignalParser>parsers = new ArrayList<>(2);
+        parsers.add(new GlobalCacheParser(source));
+        parsers.add(new ProntoParser(source));
+        return new MultiParser(parsers, source);
+    }
 }

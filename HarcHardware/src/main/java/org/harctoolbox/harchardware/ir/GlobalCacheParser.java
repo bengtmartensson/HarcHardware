@@ -19,9 +19,10 @@ package org.harctoolbox.harchardware.ir;
 
 import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSignal;
-import org.harctoolbox.ircore.ProntoRawParser;
+import org.harctoolbox.ircore.IrSignalParser;
+import org.harctoolbox.ircore.RawParser;
 
-public class GlobalCacheParser extends ProntoRawParser {
+public class GlobalCacheParser extends RawParser implements IrSignalParser {
 
     public GlobalCacheParser(String source) {
         super(source);
@@ -34,11 +35,14 @@ public class GlobalCacheParser extends ProntoRawParser {
     @Override
     public IrSignal toIrSignal(Double fallbackFrequency, Double dummyGap) throws InvalidArgumentException {
         try {
-            IrSignal irSignal = GlobalCache.parse(getSource());
-            if (irSignal != null)
-                return irSignal;
+            return GlobalCache.parse(getSource());
         } catch (InvalidArgumentException ex) {
+            return null;
         }
-        return super.toIrSignal(fallbackFrequency, dummyGap);
+    }
+
+    @Override
+    public String getName() {
+        return "GlobalCache";
     }
 }
