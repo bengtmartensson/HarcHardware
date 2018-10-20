@@ -17,12 +17,19 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
+import org.harctoolbox.ircore.AbstractIrParser;
 import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.IrSignalParser;
-import org.harctoolbox.ircore.RawParser;
+import org.harctoolbox.ircore.MultiParser;
 
-public class GlobalCacheParser extends RawParser implements IrSignalParser {
+public class GlobalCacheParser extends AbstractIrParser implements IrSignalParser {
+
+    public static MultiParser newParser(String source) {
+        MultiParser parser = MultiParser.newIrCoreParser(source);
+        parser.addParser(new GlobalCacheParser(source));
+        return parser;
+    }
 
     public GlobalCacheParser(String source) {
         super(source);
@@ -34,11 +41,7 @@ public class GlobalCacheParser extends RawParser implements IrSignalParser {
 
     @Override
     public IrSignal toIrSignal(Double fallbackFrequency, Double dummyGap) throws InvalidArgumentException {
-        try {
-            return GlobalCache.parse(getSource());
-        } catch (InvalidArgumentException ex) {
-            return null;
-        }
+        return GlobalCache.parse(getSource());
     }
 
     @Override
