@@ -117,8 +117,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     private static String globalCacheString(IrSignal code, int count, boolean compressed) {
-        int[] intro = code.getIntroInts();
-        int[] repeat = code.getRepeatInts();
+        int[] intro = code.getIntroPulses();
+        int[] repeat = code.getRepeatPulses();
         return (Long.toString(Math.round(code.getFrequency()))) + "," + count + "," + (1 + intro.length)
                 + (compressed ? gcCompressedJoiner(intro, repeat) : (gcJoiner(intro) + gcJoiner(repeat)));
     }
