@@ -17,8 +17,22 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.misc;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.Locale;
 import org.harctoolbox.harchardware.HarcHardwareException;
@@ -29,7 +43,7 @@ import org.harctoolbox.irp.IrpUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class EzControlT10 implements IHarcHardware, IWeb {
+public final class EzControlT10 implements IHarcHardware, IWeb {
 
     public final static String defaultEzcontrolIP = "192.168.1.42";
     private final static int ezcontrolPortno = 7042;
@@ -184,7 +198,7 @@ public class EzControlT10 implements IHarcHardware, IWeb {
                     percentValue = Integer.parseInt(args[arg_i + 1]);
                 }
             } else {
-                system = EZSystem.valueOf(args[arg_i].toUpperCase(Locale.US));
+                system = EZSystem.parse(args[arg_i]);
                 housecode = args[arg_i + 1];
                 String devString = args[arg_i + 2];
 
@@ -240,6 +254,15 @@ public class EzControlT10 implements IHarcHardware, IWeb {
             System.err.println(ex.getMessage());
         }
     }
+
+    public static boolean isPresetCommand(String cmd) {
+        try {
+            return Command.valueOf(cmd).isPresetCommand();
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
     // UDP control presently not implemented for manual selection.
 
     private String ezcontrolIP;
@@ -973,11 +996,13 @@ public class EzControlT10 implements IHarcHardware, IWeb {
             return name + ": " + stateStr();
         }
     }
+
     /** Interfaces that can be used to command an T10 */
     public enum Interface {
         udp,
         http
     }
+
     public enum EZSystem {
         /** The FS-10 system, now obsolete. */
         FS10, // 1
@@ -1040,6 +1065,7 @@ public class EzControlT10 implements IHarcHardware, IWeb {
             return this == AB400;
         }
     }
+
     /**
      * An enum consisting of the commands this class understands.
      */
@@ -1079,14 +1105,6 @@ public class EzControlT10 implements IHarcHardware, IWeb {
          */
         public boolean hasTimeArgument() {
             return this == dim_max_time || this == dim_off_time || this == set_time;
-        }
-    }
-
-    public static boolean isPresetCommand(String cmd) {
-        try {
-            return Command.valueOf(cmd).isPresetCommand();
-        } catch (IllegalArgumentException ex) {
-            return false;
         }
     }
 
