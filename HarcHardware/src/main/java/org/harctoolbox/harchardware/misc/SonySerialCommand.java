@@ -43,6 +43,9 @@ public class SonySerialCommand {
     public static byte[] bytes(int n1, int n2, Type sg) {
         return bytes(n1, n2, sg, 0);
     }
+    public static byte[] bytes(int n1, int n2, String sg) {
+        return bytes(n1, n2, Type.valueOf(sg), 0);
+    }
     public static byte[] bytes(int n1, int n2) {
         return bytes(n1, n2, Type.set, 0);
     }

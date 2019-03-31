@@ -556,6 +556,12 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return new GlobalCacheIrTransmitter(module, port);
     }
 
+    public GlobalCacheIrTransmitter newTransmitter(int cardinal) throws NoSuchTransmitterException {
+        int module = (cardinal - 1)/ connectorsPerModule + this.firstIrModule;
+        int port = (cardinal - 1) % connectorsPerModule + 1;
+        return new GlobalCacheIrTransmitter(module, port);
+    }
+
     @Override
     public String[] getTransmitterNames() {
         String[] result = new String[irModules.size() * connectorsPerModule];

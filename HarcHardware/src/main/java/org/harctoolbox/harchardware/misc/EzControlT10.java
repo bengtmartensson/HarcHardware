@@ -257,6 +257,10 @@ public class EzControlT10 implements IHarcHardware, IWeb {
         this.interfaze = interfaze;
     }
 
+    public EzControlT10(String hostname, boolean verbose) {
+        this(hostname, verbose, Interface.http);
+    }
+
     public EzControlT10(String hostname) {
         this(hostname, false, Interface.http);
     }
@@ -936,12 +940,12 @@ public class EzControlT10 implements IHarcHardware, IWeb {
     }
 
     public void generateXml(File file) throws FileNotFoundException {
-        XmlUtils.printDOM(file, xmlConfig(), null, null);
+        XmlUtils.printDOM(file, xmlConfig(), null, null, null);
     }
 
     public void getConfiguration(File file) {
         try {
-            XmlUtils.printDOM(file, xmlConfig(), null, null);
+            XmlUtils.printDOM(file, xmlConfig(), null, null, null);
         } catch (FileNotFoundException e) {
             System.err.println(e.getMessage());
         }
@@ -1077,6 +1081,15 @@ public class EzControlT10 implements IHarcHardware, IWeb {
             return this == dim_max_time || this == dim_off_time || this == set_time;
         }
     }
+
+    public static boolean isPresetCommand(String cmd) {
+        try {
+            return Command.valueOf(cmd).isPresetCommand();
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
     private class Timer {
 
         boolean[] presets;
