@@ -28,13 +28,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-    <!--distributionManagement>
-        <repository>
-            <id>repos</id>
-            <name>Repository</name>
-            <url>file:///${project.basedir}/../repos</url>
-        </repository>
-    </distributionManagement-->
     <build>
         <plugins>
             <!-- Generate Version.java from Version.xml using mkVersion.xsl. -->
@@ -79,26 +72,7 @@
                                 </fileMapper>
                             </fileMappers>
                         </transformationSet>
-                        <transformationSet>
-                            <dir>src/main/xdocs</dir>
-                            <outputDir>
-                                ${project.build.directory}/generated-documents
-                            </outputDir>
-                            <includes>
-                                <include>*.xml</include>
-                            </includes>
-                            <stylesheet>../tools/xdoc2html.xsl</stylesheet>
-                            <fileMappers>
-                                <fileMapper implementation=
-                 "org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
-                                    <targetExtension>.html</targetExtension>
-                                </fileMapper>
-                            </fileMappers>
-                        </transformationSet>
                     </transformationSets>
-                    <!--catalogs>
-                        <catalog>../schemas/catalog.xml</catalog>
-                    </catalogs-->
                 </configuration>
 
                 <!-- Use xalan instead of builtin parser which doesn't really work -->
@@ -119,7 +93,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>${project.groupId}.harchardware.MainString</mainClass>
+                            <mainClass>${project.groupId}.harchardware.MainString</mainClass> <!-- ??? -->
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -139,17 +113,6 @@
                             <goal>single</goal>
                         </goals>
                     </execution>
-                    <!--execution>
-                      <id>exec-src</id>
-                      <configuration>
-                        <descriptor>src/assembly/source.xml</descriptor>
-                        <finalName>${project.name}-src-${project.version}</finalName>
-                      </configuration>
-                      <phase>package</phase>
-                      <goals>
-                        <goal>single</goal>
-                      </goals>
-                    </execution-->
                 </executions>
             </plugin>
 
