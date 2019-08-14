@@ -17,7 +17,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware;
 
-import static org.testng.Assert.assertEquals;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import static org.testng.Assert.assertFalse;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -48,23 +50,24 @@ public class UtilsNGTest {
     /**
      * Test of getHostname method, of class Utils.
      */
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void testGetHostname() {
         System.out.println("getHostname");
-        String expResult = "epsilon";
         String result = Utils.getHostname();
-        assertEquals(result, expResult);
+        System.out.println(result);
+        assertFalse(result.isEmpty());
     }
 
     /**
-     * Test of escapeCommandLine method, of class Utils.
+     * Test of getMacAddress method, of class Utils.
+     * @throws java.net.UnknownHostException
      */
     @Test
-    public void testEscapeCommandLine() {
-        System.out.println("escapeCommandLine");
-        String cmd = "bla\rblurbb\r\n";
-        String expResult = "bla\\rblurbb\\r\\n";
-        String result = Utils.escapeCommandLine(cmd);
-        assertEquals(result, expResult);
+    public void testGetMacAddress() throws UnknownHostException {
+        System.out.println("getMacAddress");
+        InetAddress address = InetAddress.getByName(Utils.getHostname());
+        String result = Utils.getMacAddress(address);
+        System.out.println(result);
+        assertFalse(result.isEmpty());
     }
 }

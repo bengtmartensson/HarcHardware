@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011 Bengt Martensson.
+Copyright (C) 2011, 2019 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,16 +22,11 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 
 /**
- * This class ...
- *
- * @author Bengt Martensson
+ * This class contains a few static support function.
  */
 public class Utils {
-
-    public static final int invalid = -1;
 
     public static String getHostname() {
         String hostname = System.getenv("HOSTNAME");
@@ -78,29 +73,6 @@ public class Utils {
         return result;
     }
 
-    //public static String evaluateEscapes(String in) {
-    //    return in.endsWith("\\r") ? in.substring(0, in.length() - 2) + "\r" : in;
-    //}
-
-    public static String escapeCommandLine(String cmd) {
-        return cmd.replace("\r", "\\r").replace("\n", "\\n");
+    private Utils() {
     }
-
-    /**
-     * Just for testing.
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        String hostname = getHostname();
-        String macAddress = null;
-        try {
-            macAddress = getMacAddress(InetAddress.getByName(hostname));
-        } catch (UnknownHostException ex) {
-            System.err.println(ex.getMessage());
-        }
-        System.out.println(hostname + " " + macAddress);
-
-        //System.out.println(evaluateEscapes("123\\r45\\n6"));
-    }
-
 }

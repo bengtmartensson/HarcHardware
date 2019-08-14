@@ -28,7 +28,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
-import org.harctoolbox.harchardware.Utils;
 
 public final class LocalSerialPortBuffered extends LocalSerialPort implements ICommandLineDevice {
 
@@ -50,6 +49,10 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
         } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
             System.err.println(ex.getMessage());
         }
+    }
+
+    private static String escapeCommandLine(String cmd) {
+        return cmd.replace("\r", "\\r").replace("\n", "\\n");
     }
 
     private BufferedReader bufferedInStream;
@@ -88,7 +91,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     @Override
     public void sendString(String cmd) throws IOException {
         if (verbose)
-            System.err.println("LocalSerialPortBuffered.sendString: Sent '" + Utils.escapeCommandLine(cmd) + "'.");
+            System.err.println("LocalSerialPortBuffered.sendString: Sent '" + escapeCommandLine(cmd) + "'.");
         sendBytes(cmd.getBytes(Charset.forName("US-ASCII")));
     }
 
