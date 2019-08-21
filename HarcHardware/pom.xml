@@ -25,6 +25,7 @@
     <url>http://www.harctoolbox.org/HarcHardware.html</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.nameLowercase>harchardware</project.nameLowercase>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
@@ -34,9 +35,10 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
-                <version>1.0</version>
+                <version>1.0.2</version>
                 <executions>
                     <execution>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>transform</goal>
                         </goals>
@@ -47,9 +49,9 @@
                         <transformationSet>
                             <dir>src/main/xml</dir>
                             <outputDir>${project.build.directory}/generated-sources/xml/org/harctoolbox/harchardware</outputDir>
-                            <excludes>
-                                <exclude>*.dtd</exclude>
-                            </excludes>
+                            <includes>
+                                <include>Version.xml</include>
+                            </includes>
                             <stylesheet>../tools/mkVersion.xsl</stylesheet>
                             <parameters>
                                 <parameter>
@@ -66,8 +68,7 @@
                                 </parameter>
                             </parameters>
                             <fileMappers>
-                                <fileMapper implementation=
-                 "org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
+                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
                                     <targetExtension>.java</targetExtension>
                                 </fileMapper>
                             </fileMappers>
@@ -75,7 +76,6 @@
                     </transformationSets>
                 </configuration>
 
-                <!-- Use xalan instead of builtin parser which doesn't really work -->
                 <dependencies>
                     <dependency>
                         <groupId>xalan</groupId>
@@ -85,23 +85,20 @@
                 </dependencies>
             </plugin>
 
-            <!-- Source and binary tarballs from src/assembly/* files. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.1.1</version>
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>${project.groupId}.harchardware.MainString</mainClass> <!-- ??? -->
+                            <mainClass>${project.groupId}.harchardware.Main</mainClass>
                         </manifest>
                     </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <finalName>${project.name}</finalName>
-                    <appendAssemblyId>true</appendAssemblyId>
+                    <!--finalName>${project.name}</finalName-->
+                    <!--appendAssemblyId>true</appendAssemblyId-->
                     <descriptors>
+                        <descriptor>src/assembly/jar-with-dependencies.xml</descriptor>
                         <descriptor>src/assembly/target.xml</descriptor>
                     </descriptors>
                 </configuration>
@@ -119,7 +116,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>3.8.1</version>
                 <configuration>
                     <showDeprecation>true</showDeprecation>
                 </configuration>
@@ -127,7 +124,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.9.1</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
@@ -145,7 +142,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>2.22.2</version>
                 <configuration>
                     <skipTests>false</skipTests>
                     <argLine>-Djava.library.path=${basedir}/../native/Linux-amd64</argLine>
