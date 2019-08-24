@@ -37,19 +37,19 @@ public class Wol {
     public final static String defaultIP = "255.255.255.255";
     public final static int defaultPort = 9;
 
-    public static void wol(String str) throws IOException, FileNotFoundException, FileNotFoundException, HarcHardwareException {
+    public static void wol(String str) throws FileNotFoundException, HarcHardwareException, IOException {
         (new Wol(str)).wol();
     }
 
-    public static void wol(String str, boolean verbose) throws IOException, FileNotFoundException, FileNotFoundException, HarcHardwareException {
+    public static void wol(String str, boolean verbose) throws FileNotFoundException, HarcHardwareException, IOException {
         (new Wol(str, verbose)).wol();
     }
 
-    public static void wol(String str, boolean verbose, InetAddress ip) throws IOException, FileNotFoundException, FileNotFoundException, HarcHardwareException {
+    public static void wol(String str, boolean verbose, InetAddress ip) throws FileNotFoundException, HarcHardwareException, IOException {
         (new Wol(str, verbose, ip)).wol();
     }
 
-    public static void wol(String str, boolean verbose, InetAddress ip, int port) throws IOException, FileNotFoundException, FileNotFoundException, HarcHardwareException {
+    public static void wol(String str, boolean verbose, InetAddress ip, int port) throws FileNotFoundException, HarcHardwareException, IOException {
         (new Wol(str, verbose, ip, port)).wol();
     }
 
@@ -95,7 +95,7 @@ public class Wol {
      * @throws FileNotFoundException ethers data base file was not found.
      * @throws HarcHardwareException
      */
-    public Wol(String str, boolean verbose, InetAddress ip, int port) throws FileNotFoundException, HarcHardwareException {
+    public Wol(String str, boolean verbose, InetAddress ip, int port) throws HarcHardwareException, FileNotFoundException {
         this.verbose = verbose;
         this.ip = ip;
         this.port = port;
@@ -149,7 +149,7 @@ public class Wol {
      * @throws java.net.SocketException
      * @throws IOException if an I/O error occurs
      */
-    public void wol() throws SocketException, IOException {
+    public void wol() throws IOException {
         if (verbose)
             System.err.println("Sent WOL to " + ethernetAddress.toString());
         try (DatagramSocket socket = new DatagramSocket()) {
