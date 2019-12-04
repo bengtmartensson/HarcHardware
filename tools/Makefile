@@ -31,7 +31,7 @@ version:
 
 setversion:
 	( cd HarcHardware ; mvn versions:set -DnewVersion=$(NEWVERSION) )
-	git commit -S -m "Set version to $(NEWVERSION)" pom.xml
+	git commit -S -m "Set version to $(NEWVERSION)" HarcHardware/pom.xml
 
 deploy:
 	( cd HarcHardware ; mvn deploy -P release )
@@ -51,7 +51,7 @@ gh-pages: HarcHardware/target/site/apidocs
 	rm -rf $(GH_PAGES)
 	git clone --depth 1 -b gh-pages ${ORIGINURL} ${GH_PAGES}
 	( cd ${GH_PAGES} ; \
-	cp -r ../HarcHardware/target/site/apidocs/* . ; \
+	cp -r ../target/site/apidocs/* . ; \
 	git add * ; \
 	git commit -a -m "Update of API documentation" ; \
 	git push )
