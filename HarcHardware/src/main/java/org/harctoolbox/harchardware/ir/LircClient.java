@@ -21,9 +21,11 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
+import com.beust.jcommander.internal.DefaultConsole;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -56,10 +58,10 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
     private static CommandLineArgs commandLineArgs = new CommandLineArgs();
 
     private static void usage(int exitcode) {
-        StringBuilder str = new StringBuilder(256);
-        argumentParser.usage(str);
+        PrintStream printStream = exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err;
+        argumentParser.setConsole(new DefaultConsole(printStream));
+        argumentParser.usage();
 
-        (exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err).println(str);
         doExit(exitcode); // placifying FindBugs...
     }
 

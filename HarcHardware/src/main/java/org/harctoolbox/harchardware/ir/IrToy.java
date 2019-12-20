@@ -376,6 +376,9 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         try {
             seq = new ModulatedIrSequence(data, frequency);
         } catch (OddSequenceLengthException ex) {
+            for (int i = 0; i < data.length; i++)
+                System.err.print(data[i] + " ");
+            System.err.println();
             throw new HarcHardwareException("IrToy: Erroneous data received.");
         }
         return seq;

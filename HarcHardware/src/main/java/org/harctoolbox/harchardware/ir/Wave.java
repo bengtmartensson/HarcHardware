@@ -20,6 +20,7 @@ package org.harctoolbox.harchardware.ir;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.internal.DefaultConsole;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -71,15 +72,14 @@ public class Wave {
     }
 
     private static void usage(int exitcode) {
-        StringBuilder str = new StringBuilder(256);
-        argumentParser.usage(str);
+        PrintStream printStream = exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err;
+        argumentParser.setConsole(new DefaultConsole(printStream));
+        argumentParser.usage();
 
-        str.append("\n"
+        printStream.println("\n"
                 + "parameters: <protocol> <deviceno> [<subdevice_no>] commandno [<toggle>]\n"
                 + "   or       <Pronto code>\n"
                 + "   or       <importfile>");
-
-        (exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err).println(str);
 
         System.exit(exitcode);
     }

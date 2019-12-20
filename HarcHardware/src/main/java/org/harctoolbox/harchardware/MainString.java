@@ -20,10 +20,12 @@ package org.harctoolbox.harchardware;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.internal.DefaultConsole;
 import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
@@ -37,19 +39,10 @@ import org.harctoolbox.irp.IrpUtils;
  */
 public class MainString {
 
-    //private final static int invalidPort = -1;
     private final static int defaultPortNumber = 1;
 
     private static JCommander argumentParser;
     private static final CommandLineArgs commandLineArgs = new CommandLineArgs();
-
-    private static String join(Iterable<String> arr, String separator) {
-        StringBuilder result = new StringBuilder(32);
-        for (String s : arr)
-            result.append(result.length() == 0 ? "" : separator).append(s);
-        return result.toString();
-    }
-
 
     private static int noTrue(boolean... bool) {
         int sum = 0;
@@ -61,17 +54,16 @@ public class MainString {
     }
 
     private static void usage(int exitcode) {
-        StringBuilder str = new StringBuilder(128);
-        argumentParser.usage(str);
+        PrintStream printStream = exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err;
+        argumentParser.setConsole(new DefaultConsole(printStream));
+        argumentParser.usage();
 
-        (exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err).println(str);
         doExit(exitcode);
     }
 
     private static void doExit(int exitcode) {
         System.exit(exitcode);
     }
-
 
     public static void main(String[] args) {
         argumentParser = new JCommander(commandLineArgs);
@@ -200,7 +192,7 @@ public class MainString {
                 System.err.println("This version does not support interactive mode; must give at least one argument");
                 System.exit(IrpUtils.EXIT_USAGE_ERROR);
             } else {
-                String command = framer.frame(join(commandLineArgs.parameters, " "));
+                String command = framer.frame(String.join(" ", commandLineArgs.parameters));
                 String[] result = stringCommander.sendString(
                         new String[]{command}, commandLineArgs.count, returnLines, commandLineArgs.delay, 0);
                 for (String s : result)
@@ -215,8 +207,10 @@ public class MainString {
             System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
         }
     }
+
     private MainString() {
     }
+
     private final static class CommandLineArgs {
 
         @Parameter(names = {"-1"}, description = "Expect one line of response")
