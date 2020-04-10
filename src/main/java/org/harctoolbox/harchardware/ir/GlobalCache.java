@@ -193,7 +193,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         for (int i = 0; i < chunks.length - index; i++)
             durations[i] = (int) Math.round(Integer.parseInt(chunks[i + index]) * T);
 
-        return new IrSignal(durations, repIndex - 1, durations.length - repIndex + 1, (double) frequency);
+        return new IrSignal(durations, repIndex - 1, durations.length - repIndex + 1, frequency);
     }
 
     private static void usage() {

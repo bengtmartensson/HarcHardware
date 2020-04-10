@@ -50,12 +50,16 @@ public class AmxBeacon {
                 + pack("Config-URL", configUrl);
     }
 
+    /**
+     * Fires up a test instance.
+     * @param args not necessary, nor evaluated. Runs until stopped from external source.
+     */
     public static void main(String[] args) {
         try {
             String hostname = Utils.getHostname();
             String macAddress = Utils.getMacAddress(InetAddress.getByName(hostname));
 
-            AmxBeacon amx = new AmxBeacon(createPayload(hostname + "@" + macAddress, "HarcToolbox", "zzz", "0000", "0.0.0", "xyz", "http://localhost"));
+            AmxBeacon amx = new AmxBeacon(createPayload(hostname + "@" + macAddress, "HarcToolbox", "the make", "the model", "0.0.0", "the config", "http://no/such/address"));
             BeaconThread thread = new BeaconThread(amx);
             thread.start();
         } catch (UnknownHostException ex) {

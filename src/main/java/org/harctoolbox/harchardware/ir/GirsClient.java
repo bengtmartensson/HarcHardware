@@ -87,11 +87,9 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         try (TcpSocketPort tcp = new TcpSocketPort(ip, portnumber, verbose, TcpSocketPort.ConnectionMode.keepAlive);
             GirsClient<TcpSocketPort> gc = new GirsClient<>(tcp)) {
             gc.testGirs();
-        } catch (HarcHardwareException ex) {
-            logger.log(Level.SEVERE, null, ex);
         } catch (UnknownHostException ex) {
             logger.log(Level.SEVERE, "Unknown host: {0}", ip);
-        } catch (IOException ex) {
+        } catch (HarcHardwareException | IOException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
     }
@@ -103,11 +101,6 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
             logger.log(Level.SEVERE, null, ex);
         }
-    }
-
-    private void testGirs() throws IOException, HarcHardwareException {
-        open();
-        getModules().forEach((module) -> this.testModule(module));
     }
 
     private static String capitalize(String module) {
@@ -133,6 +126,11 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         this.verbose = false;
         this.hardware = hardware;
         this.useReceiveForCapture = false;
+    }
+    
+    private void testGirs() throws IOException, HarcHardwareException {
+        open();
+        getModules().forEach((module) -> this.testModule(module));
     }
 
     private void testModule(String module) {

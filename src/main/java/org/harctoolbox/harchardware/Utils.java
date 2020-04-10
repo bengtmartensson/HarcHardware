@@ -31,8 +31,6 @@ public class Utils {
     public static String getHostname() {
         String hostname = System.getenv("HOSTNAME");
         if (hostname == null)
-            hostname = System.getenv("HOSTNAME");
-        if (hostname == null)
             hostname = System.getenv("COMPUTERNAME");
 
         return hostname;
