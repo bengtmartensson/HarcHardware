@@ -121,7 +121,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
         String[] splitAddress = commandLineArgs.address.split(":");
         String hostname = splitAddress[0];
         int port = splitAddress.length == 2 ? Integer.parseInt(splitAddress[1]) : commandLineArgs.port;
-        try (LircClient lircClient = new LircClient(hostname, port,
+        try (LircClient lircClient = new LircClient(InetAddress.getByName(hostname), port,
                 commandLineArgs.verbose, commandLineArgs.timeout)) {
 
             if (commandLineArgs.listen) {
@@ -179,46 +179,55 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
             doExit("No such transmitter " + ex.getMessage(), IrpUtils.EXIT_SEMANTIC_USAGE_ERROR);
         }
     }
-    private String lircServerIp;
+
+    //private String lircServerIp;
     private int lircPort;
 
     private final int portMin = 1;
     private final int portMax = 8;
 
-    private boolean verbose = true;
-    private int debug = 0;
-    private int timeout = defaultTimeout;
+    private boolean verbose;
+    //private int debug = 0;
+    private int timeout;
 
-    private InetAddress inetAddress = null;
+    private InetAddress inetAddress;
 
     private String lastRemote = null;
     private String lastCommand = null;
 
-    private String version = null;
+    private String version;
 
     private LircTransmitter lircTransmitter;
 
-    public LircClient(String hostname, int port, boolean verbose, int timeout) throws UnknownHostException, IOException {
+    public LircClient(InetAddress hostname, Integer port, boolean verbose, Integer timeout) throws IOException {
         this.lircTransmitter = new LircTransmitter();
-        this.timeout = timeout;
-        lircServerIp = (hostname != null) ? hostname : defaultLircIP;
-        inetAddress = InetAddress.getByName(hostname);
-        lircPort = port;
+        this.timeout = timeout != null ? timeout : defaultTimeout;
+        //lircServerIp = (hostname != null) ? hostname : defaultLircIP;
+        this.inetAddress = inetAddress != null ? inetAddress : InetAddress.getByName(defaultLircIP);
+        lircPort = port != null ? port : lircDefaultPort;
         this.verbose = verbose;
         String[] result = sendCommand("VERSION", false);
         version = (result == null || result.length == 0) ? null : result[0];
     }
 
-    public LircClient(String hostname, boolean verbose, int timeout) throws UnknownHostException, IOException {
+    public LircClient(String hostname, Integer port, boolean verbose, Integer timeout) throws UnknownHostException, IOException {
+        this(InetAddress.getByName(hostname), port, verbose, timeout);
+    }
+
+    public LircClient(InetAddress hostname, boolean verbose, Integer timeout) throws IOException {
         this(hostname, lircDefaultPort, verbose, timeout);
     }
 
-    public LircClient(String hostname, boolean verbose) throws UnknownHostException, IOException {
+    public LircClient(InetAddress hostname, boolean verbose) throws IOException {
         this(hostname, verbose, defaultTimeout);
     }
 
-    public LircClient(String hostname) throws UnknownHostException, IOException {
+    public LircClient(InetAddress hostname) throws IOException {
         this(hostname, false);
+    }
+
+    public LircClient(String hostname) throws UnknownHostException, IOException {
+        this(InetAddress.getByName(hostname));
     }
 
     @Override
@@ -266,7 +275,6 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
 
     @Override
     public void setDebug(int debug) {
-        this.debug = debug;
     }
 
 
@@ -277,13 +285,13 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
 
 
     protected void readLoop() throws IOException {
-        TcpSocketChannel tcpSocketChannel = new TcpSocketChannel(lircServerIp, lircPort,
+        TcpSocketChannel tcpSocketChannel = new TcpSocketChannel(inetAddress, lircPort,
                 0 /*timeout*/, verbose, TcpSocketPort.ConnectionMode.keepAlive);
         tcpSocketChannel.connect();
         //OutputStream outToServer = tcpSocketChannel.getOut();
         BufferedReader inFromServer = tcpSocketChannel.getBufferedIn();
         if (inFromServer == null)
-            throw new IOException("Could not open socket connection to LIRC server " + lircServerIp);
+            throw new IOException("Could not open socket connection to LIRC server " + inetAddress.getCanonicalHostName());
         while (true) {
             String line = inFromServer.readLine();
             System.out.println(line);
@@ -292,15 +300,15 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
 
     protected final String[] sendCommand(String packet, boolean oneWord) throws IOException {
         if (verbose)
-            System.err.println("Sending command `" + packet + "' to Lirc@" + lircServerIp);
+            System.err.println("Sending command `" + packet + "' to Lirc@" + inetAddress.getCanonicalHostName());
 
-        TcpSocketChannel tcpSocketChannel = new TcpSocketChannel(lircServerIp, lircPort,
+        TcpSocketChannel tcpSocketChannel = new TcpSocketChannel(inetAddress, lircPort,
                 timeout, verbose, TcpSocketPort.ConnectionMode.justInTime);
         tcpSocketChannel.connect();
         OutputStream outToServer = tcpSocketChannel.getOut();
         BufferedReader inFromServer = tcpSocketChannel.getBufferedIn();
         if (outToServer == null || inFromServer == null)
-            throw new IOException("Could not open socket connection to LIRC server " + lircServerIp);
+            throw new IOException("Could not open socket connection to LIRC server " + inetAddress.getCanonicalHostName());
 
         tcpSocketChannel.sendString(packet + '\n');
 
@@ -401,7 +409,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
             result = null;
             status = -1;
         } catch (IOException e) {
-            System.err.println("Couldn't read from " + lircServerIp);
+            System.err.println("Couldn't read from " + inetAddress.getCanonicalHostName());
             status = -1;
         } finally {
             try {

@@ -18,6 +18,7 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.Pronto;
@@ -28,20 +29,28 @@ import org.harctoolbox.ircore.Pronto;
  */
 public class LircCcfClient extends LircClient implements IRawIrSender {
 
-    public LircCcfClient(String hostname, int port, boolean verbose, int timeout) throws UnknownHostException, IOException {
+    public LircCcfClient(InetAddress hostname, Integer port, boolean verbose, Integer timeout) throws IOException {
         super(hostname, port, verbose, timeout);
     }
 
-    public LircCcfClient(String hostname, boolean verbose, int timeout) throws UnknownHostException, IOException {
-        super(hostname, verbose, timeout);
+    public LircCcfClient(String hostname, Integer port, boolean verbose, Integer timeout) throws IOException {
+        this(InetAddress.getByName(hostname), port, verbose, timeout);
     }
 
-    public LircCcfClient(String hostname, boolean verbose) throws UnknownHostException, IOException {
-        super(hostname, verbose);
+    public LircCcfClient(InetAddress hostname, boolean verbose, Integer timeout) throws IOException {
+        this(hostname, null, verbose, timeout);
+    }
+
+    public LircCcfClient(InetAddress hostname, boolean verbose) throws IOException {
+        this(hostname, verbose, null);
+    }
+
+    public LircCcfClient(InetAddress hostname) throws IOException {
+        this(hostname, false);
     }
 
     public LircCcfClient(String hostname) throws UnknownHostException, IOException {
-        super(hostname, false);
+        this(InetAddress.getByName(hostname));
     }
 
     public boolean sendCcf(String ccf, int count, Transmitter transmitter) throws IOException, NoSuchTransmitterException {

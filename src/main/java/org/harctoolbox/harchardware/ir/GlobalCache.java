@@ -52,6 +52,8 @@ import org.harctoolbox.irp.IrpUtils;
 
 public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, ITransmitter, ICapture, IWeb {
 
+    private static final Logger logger = Logger.getLogger(GlobalCache.class.getName());
+
     private final static int smallDelay = 10; // ms
     private final static int gcPort = 4998;
     private final static int gcFirstSerialPort = 4999;
@@ -481,30 +483,40 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
      */
     private int sendIndex;
 
-    public GlobalCache(String hostIp, boolean verbose, int timeout, boolean compressed) throws UnknownHostException, IOException {
-        //globalCacheModel = GlobalCacheModel.newGlobalCacheModel(model);
-        this.timeout = timeout;
-        this.hostIp = (hostIp != null) ? hostIp : defaultGlobalCacheIP;
-        inetAddress = InetAddress.getByName(hostIp);
+    public GlobalCache(InetAddress inetAddress, boolean verbose, Integer timeout, boolean compressed) throws IOException {
+        this.timeout = timeout != null ? timeout : defaultSocketTimeout;
+        this.hostIp = inetAddress.getHostAddress();
+        this.inetAddress = inetAddress;
         this.verbose = verbose;
         this.compressed = compressed;
         open();
     }
 
-    public GlobalCache(String hostIp, boolean verbose, int timeout) throws UnknownHostException, IOException {
+    public GlobalCache(String hostIp, boolean verbose, Integer timeout, boolean compressed) throws UnknownHostException, IOException {
+        this(InetAddress.getByName(hostIp != null ? hostIp : defaultGlobalCacheIP), verbose, timeout, compressed);
+    }
+
+    public GlobalCache(InetAddress inetAddress, boolean verbose, Integer portNumber, Integer timeout) throws IOException {
+        // ignores portNumber
+        this(inetAddress, verbose, timeout, false);
+        if (portNumber != null)
+            logger.log(Level.WARNING, "Explicit port (=({0}) ignored.", portNumber);
+    }
+
+    public GlobalCache(String hostIp, boolean verbose, Integer timeout) throws UnknownHostException, IOException {
         this(hostIp, verbose, timeout, false);
     }
 
     public GlobalCache(String hostname) throws UnknownHostException, IOException {
-        this(hostname, false, defaultSocketTimeout, false);
+        this(hostname, false);
     }
 
     public GlobalCache(String hostname, boolean verbose, boolean compressed) throws UnknownHostException, IOException {
-        this(hostname, verbose, defaultSocketTimeout, compressed);
+        this(hostname, verbose, null, compressed);
     }
 
     public GlobalCache(String hostname, boolean verbose) throws UnknownHostException, IOException {
-        this(hostname, verbose, defaultSocketTimeout, false);
+        this(hostname, verbose, null);
     }
 
     @Override
@@ -595,6 +607,9 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
     @Override
     public final void open() throws UnknownHostException, IOException {
+        if (tcpSocketChannel != null)
+            return; // already open
+
         tcpSocketChannel = new TcpSocketChannel(this.hostIp, gcPort, timeout,
                 verbose, TcpSocketPort.ConnectionMode.keepAlive);
         getdevicesResult = sendCommand("getdevices", -1);
@@ -614,8 +629,10 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
     @Override
     public synchronized void close() throws IOException {
-        if (tcpSocketChannel != null)
+        if (tcpSocketChannel != null) {
             tcpSocketChannel.close(true);
+            tcpSocketChannel = null;
+        }
         getdevicesResult = null;
     }
 
@@ -656,11 +673,11 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
             result = new String[noLines];
             for (int i = 0; i < noLines; i++) {
                 result[i] = tcpSocketChannel.readString();// may hang
-               if (verbose)
-                    System.err.println(result[i]);
+//               if (verbose)
+//                    System.err.println(result[i]);
                if (i == 0 && expectedFirstLine != null)
                     if (!result[0].startsWith(expectedFirstLine)) {
-                        System.err.println("Expected \"" + expectedFirstLine + "\", returning immediately.");
+                        logger.log(Level.WARNING, "Expected \"{0}\", returning immediately.", expectedFirstLine);
                         break;
                     }
 
@@ -764,7 +781,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
     @Override
     public String getVersion() throws IOException {
-        return sendCommand("getversion");
+        String answer = sendCommand("getversion");
+        return answer.replaceFirst("version,", "");
     }
 
     public String getNet() throws IOException {

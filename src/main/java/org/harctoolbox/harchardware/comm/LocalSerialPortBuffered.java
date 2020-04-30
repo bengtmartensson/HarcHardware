@@ -35,7 +35,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
 
     public static void main(String[] args) {
         ArrayList<String> names;
-        try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", 9600, 8, 1, Parity.NONE, FlowControl.NONE, 10000, true)) {
+        try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 9600, 8, 1, Parity.NONE, FlowControl.NONE, 10000)) {
             names = getSerialPortNames(false);
             names.forEach((name) -> {
                 System.out.println(name);
@@ -57,29 +57,29 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
 
     private BufferedReader bufferedInStream;
 
-    public LocalSerialPortBuffered(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public LocalSerialPortBuffered(String portName, boolean verbose, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
         super(portName, baud, length, stopBits, parity, flowControl, timeout);
         this.verbose = verbose;
     }
 
-    public LocalSerialPortBuffered(String portName, int baud, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0, verbose);
+    public LocalSerialPortBuffered(String portName, boolean verbose, int baud, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+        this(portName, verbose, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, timeout);
     }
 
-    public LocalSerialPortBuffered(String portName, int baud, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, timeout, verbose);
+    public LocalSerialPortBuffered(String portName, boolean verbose, int baud) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+        this(portName, verbose, baud, null);
     }
 
     public LocalSerialPortBuffered(String portName, int baudRate) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baudRate, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0, false);
+        this(portName, false, baudRate);
     }
 
     public LocalSerialPortBuffered(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0, false);
+        this(portName, defaultBaudRate);
     }
 
     public LocalSerialPortBuffered(int portNumber) throws IOException, NoSuchPortException, PortInUseException, UnsupportedCommOperationException {
-        this(getSerialPortName(portNumber), defaultBaudRate, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0, false);
+        this(getSerialPortName(portNumber));
     }
 
     @Override

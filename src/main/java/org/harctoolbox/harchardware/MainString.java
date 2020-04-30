@@ -150,8 +150,8 @@ public class MainString {
                     System.err.println("Device name not given.");
                     System.exit(IrpUtils.EXIT_USAGE_ERROR);
                 }
-                localSerialPortBuffered = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.baud,
-                        commandLineArgs.timeout, commandLineArgs.verbose);
+                localSerialPortBuffered = new LocalSerialPortBuffered(commandLineArgs.device, commandLineArgs.verbose, commandLineArgs.baud,
+                        commandLineArgs.timeout);
                 hardware = localSerialPortBuffered;
             } else
                 hardware = null;

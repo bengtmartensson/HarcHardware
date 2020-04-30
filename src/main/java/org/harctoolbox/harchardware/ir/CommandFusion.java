@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
@@ -47,6 +49,9 @@ import org.harctoolbox.ircore.Pronto;
 // It would probably be possible to get the serial timeout to work as beginTimeout, but my tries
 // rendered a very unreliably working device.
 public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawIrSender, ICapture {
+
+    private static final Logger logger = Logger.getLogger(CommandFusion.class.getName());
+
     // USB parameters:
     //    VID = 0403
     //    PID = 6001
@@ -198,6 +203,12 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
 
     public CommandFusion(String portName, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
         this(portName, DEFAULTBAUDRATE, verbose);
+    }
+
+    public CommandFusion(String portName, boolean verbose, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+        this(portName, DEFAULTBAUDRATE, verbose);
+        if (timeout != null)
+            logger.log(Level.WARNING, "Timeout given, but ignored");
     }
 
     public CommandFusion(String portName, int baudRate, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {

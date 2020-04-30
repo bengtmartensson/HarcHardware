@@ -32,6 +32,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IWeb;
 import org.harctoolbox.ircore.IrSignal;
@@ -40,21 +42,17 @@ import org.harctoolbox.irp.IrpUtils;
 
 public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb {
 
+    private static final Logger logger = Logger.getLogger(IrTrans.class.getName());
+
     public final static String defaultIrTransIP = "192.168.0.32";
     protected final static int dummyDelay = 10; // milliseconds
     protected final static int defaultTimeout = 2000;
     /** port number, not possible to change. */
     public final static int portNumber = 21000;
 
-//@Override
-    //public boolean stopIr(Transmitter transmitter) {
-    //    throw new UnsupportedOperationException("stopIr not implemented in IrTrans.");
-    //}
-
     private static void usage(int exitstatus) {
         System.err.println("Usage:");
-        System.err.println("\tIrTrans [-v][-h <hostname>] -r [<remotename>]");
-        //System.err.println("\tIrTrans [-v][-h <hostname>] listenfile");
+        System.err.println("\tIrTrans [-v][-h <hostname>] -c [<Pronto Hex code>]");
         doExit(exitstatus);
     }
 
@@ -76,8 +74,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
             optarg += 2;
         }
 
-        try {
-            IrTrans irt = new IrTrans(IrTransHost, verbose, defaultTimeout, Interface.tcpAscii);
+        try (IrTrans irt = new IrTrans(InetAddress.getByName(IrTransHost), verbose)) {
             if (verbose)
                 System.out.println(irt.getVersion());
 
@@ -93,41 +90,45 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
         }
     }
 
-    protected int timeout = defaultTimeout;
-    protected String irTransIP;
-    protected InetAddress inetAddress = null;
-    protected boolean verbose = true;
-
-    protected Interface interfaze = Interface.tcpAscii;
-    // so many char name[20] in itrans code (19?)
-    //private final static int maxNameLength = 21;
+    protected int timeout;
+    protected InetAddress inetAddress;
+    protected boolean verbose;
+    protected Interface interfaze;
 
     /**
      *
-     * @param hostname
+     * @param inetAddress
      * @param verbose
      * @param timeout
      * @param interfaze
-     * @throws UnknownHostException
      */
-    public IrTrans(String hostname, boolean verbose, int timeout, Interface interfaze) throws UnknownHostException {
-        this.timeout = timeout;
-        irTransIP = hostname != null ? hostname : defaultIrTransIP;
-        inetAddress = InetAddress.getByName(irTransIP);
+    public IrTrans(InetAddress inetAddress, boolean verbose, Integer timeout, Interface interfaze) {
+        this.timeout = timeout != null ? timeout : defaultTimeout;
+        this.inetAddress = inetAddress;
         this.verbose = verbose;
         this.interfaze = interfaze;
     }
 
-    public IrTrans(String hostname, boolean verbose, int timeout) throws UnknownHostException {
+    public IrTrans(InetAddress inetAddress, Integer port, boolean verbose, Integer timeout) {
+        this(inetAddress, verbose, timeout, Interface.tcpAscii);
+        if (port != null)
+            logger.log(Level.WARNING, "Portnumber ignored");
+    }
+
+    public IrTrans(InetAddress hostname, boolean verbose, Integer timeout) {
         this(hostname, verbose, timeout, Interface.tcpAscii);
     }
 
-    public IrTrans(String hostname, boolean verbose) throws UnknownHostException {
-        this(hostname, verbose, defaultTimeout, Interface.tcpAscii);
+    public IrTrans(InetAddress hostname, boolean verbose) {
+        this(hostname, verbose, null);
+    }
+
+    public IrTrans(InetAddress hostname) {
+        this(hostname, false);
     }
 
     public IrTrans(String hostname) throws UnknownHostException {
-        this(hostname, false, defaultTimeout, Interface.tcpAscii);
+        this(InetAddress.getByName(hostname));
     }
 
     @Override
@@ -137,7 +138,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     @Override
     public URI getUri(String user, String password) {
         try {
-            return new URI("http", irTransIP, null, null);
+            return new URI("http", inetAddress.getCanonicalHostName(), null, null);
         } catch (URISyntaxException ex) {
             return null;
         }
@@ -151,16 +152,10 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     public void setDebug(int debug) {
     }
 
-
     @Override
     public IrTransTransmitter getTransmitter() {
         return new IrTransTransmitter();
     }
-
-    //@Override
-    //public IrTransTransmitter newTransmitter(int port) {
-    //    return new IrTransTransmitter(port);
-    //}
 
     public IrTransTransmitter newTransmitter(Led led) {
         return new IrTransTransmitter(led);
@@ -202,43 +197,35 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     @SuppressWarnings("SleepWhileInLoop")
     protected String sendCommand(String cmd) throws IOException {
         if (verbose)
-            System.err.println("Sending command `" + cmd + "' to IrTrans (tcp ascii)");
+            System.err.println("Sending command `" + cmd + "' to IrTrans(" + inetAddress.getCanonicalHostName() + ") using tcp ascii protocol");
 
-        Socket sock = null;
-        PrintStream outToServer = null;
-        BufferedReader inFromServer = null;
-        String result = "";
-
-        try {
-            //sock = new Socket(InetAddress.getByName(irTransIP), portNumber);
-            sock = new Socket();
+        String result;
+        try (Socket sock = new Socket()) {
             sock.connect(new InetSocketAddress(inetAddress, portNumber), timeout);
             sock.setSoTimeout(timeout);
-            outToServer = new PrintStream(sock.getOutputStream(), false, "US-ASCII");
-            inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream(), Charset.forName("US-ASCII")));
+            try (PrintStream outToServer = new PrintStream(sock.getOutputStream(), false, "US-ASCII");
+                    BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream(), Charset.forName("US-ASCII")))) {
 
-            outToServer.print("ASCI");
-            try {
-                Thread.sleep(dummyDelay);
-            } catch (InterruptedException ex) {
-            }
-            outToServer.print(cmd);
-            while (!inFromServer.ready())
+                outToServer.print("ASCI");
+                if (verbose)
+                    System.err.println(">ASCI");
                 try {
-                Thread.sleep(20);
-            } catch (InterruptedException ex) {
+                    Thread.sleep(dummyDelay);
+                } catch (InterruptedException ex) {
+                }
+                outToServer.print(cmd);
+                if (verbose)
+                    System.err.println(">" + cmd);
+                while (!inFromServer.ready())
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException ex) {
+                    }
+                result = inFromServer.readLine();
             }
-            result = inFromServer.readLine();
-        } finally {
-            if (outToServer != null)
-                outToServer.close();
-            if (inFromServer != null)
-                inFromServer.close();
-            if (sock != null)
-                sock.close();
         }
         if (verbose)
-            System.err.println(result);
+            System.err.println("<" + result);
         return result;
     }
 
@@ -289,11 +276,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     }
 
     private boolean sendCcf(String ccf, boolean repeat, Led led) throws IOException {
-        //try {
         return sendCommandUdp((repeat ? "sndccfr " : "sndccf ") + ccf.trim() + "," + Led.ledChar(led));
-        //} catch (IOException ex) {
-        //    throw new HarcHardwareException(ex);
-        //}
     }
 
     private boolean sendIr(IrSignal code, boolean repeat, Led led) throws IOException {
@@ -310,8 +293,11 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     }
 
     @Override
+    @SuppressWarnings("AssignmentToMethodParameter")
     public boolean sendIr(IrSignal code, int count, Transmitter transmitter)
             throws IOException, NoSuchTransmitterException {
+        if (transmitter == null)
+            transmitter = new IrTransTransmitter();
         if (!IrTransTransmitter.class.isInstance(transmitter))
             throw new NoSuchTransmitterException(transmitter);
         return sendIr(code, count, ((IrTransTransmitter) transmitter).led);
@@ -400,10 +386,5 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
                 throw new NoSuchTransmitterException(s);
             }
         }
-
-        // questionable...
-        //public static Led parse(int i) {
-        //    return i == 2 ? Led.extern : Led.intern;
-        //}
     }
 }

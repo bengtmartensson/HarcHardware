@@ -154,30 +154,35 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     private boolean useSignalingLed;
 
     public IrToy() throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(defaultPortName, defaultBaudRate, defaultFlowControl, defaultBeginTimeout, defaultCaptureMaxSize, false);
+        this(defaultPortName);
     }
 
     public IrToy(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, defaultFlowControl, defaultBeginTimeout, defaultCaptureMaxSize, false);
+        this(portName, false);
     }
 
-    public IrToy(String portName, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, defaultFlowControl, timeout, defaultCaptureMaxSize, verbose);
+    public IrToy(String portName, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+        this(portName, verbose, null);
     }
 
-    public IrToy(String portName, int baudRate, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baudRate, defaultFlowControl, timeout, defaultCaptureMaxSize, verbose);
+    public IrToy(String portName, boolean verbose, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+        this(portName, verbose, timeout != null ? timeout : defaultBeginTimeout, defaultBaudRate);
     }
 
-    public IrToy(String portName, int beginTimeout, int captureMaxSize, int endingTimeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, defaultFlowControl, beginTimeout, captureMaxSize, verbose);
+    public IrToy(String portName, boolean verbose, Integer timeout, int baudRate) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+        this(portName, verbose, timeout, baudRate, defaultCaptureMaxSize, defaultFlowControl);
     }
 
-    public IrToy(String portName, int baud, int beginTimeout, int captureSize, int endingTimeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baud, defaultFlowControl, beginTimeout, captureSize, verbose);
-    }
+//    public IrToy(String portName, boolean verbose, int beginTimeout, int captureMaxSize, int endingTimeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+//        this(portName, defaultBaudRate, defaultFlowControl, beginTimeout, captureMaxSize, verbose);
+//    }
 
-    public IrToy(String portName, int baudRate, LocalSerialPort.FlowControl flowControl, int timeout, int maxLearnLength, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+//    public IrToy(String portName, int baud, int beginTimeout, int captureSize, int endingTimeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+//        this(portName, baud, defaultFlowControl, beginTimeout, captureSize, verbose);
+//    }
+
+    public IrToy(String portName, boolean verbose, Integer timeout, int baudRate, int maxLearnLength, LocalSerialPort.FlowControl flowControl)
+            throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
         super(LocalSerialPortRaw.class, portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
         this.captureMaxSize = maxLearnLength;
     }

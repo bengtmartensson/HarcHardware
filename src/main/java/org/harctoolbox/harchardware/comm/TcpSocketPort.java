@@ -18,6 +18,7 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.comm;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
@@ -42,15 +43,20 @@ public class TcpSocketPort implements ICommandLineDevice, IBytesCommand, IHarcHa
 
     private TcpSocketChannel tcpSocketChannel;
 
-    public TcpSocketPort(String hostIp, int portNumber, int timeout, boolean verbose, ConnectionMode connectionMode) throws UnknownHostException {
-        tcpSocketChannel = new TcpSocketChannel(hostIp, portNumber, timeout, verbose, connectionMode);
-    }
-    public TcpSocketPort(String hostIp, int portNumber, boolean verbose, ConnectionMode connectionMode) throws UnknownHostException {
-        tcpSocketChannel = new TcpSocketChannel(hostIp, portNumber, defaultTimeout, verbose, connectionMode);
+    public TcpSocketPort(InetAddress inetAddress, int portNumber, int timeout, boolean verbose, ConnectionMode connectionMode) {
+        tcpSocketChannel = new TcpSocketChannel(inetAddress, portNumber, timeout, verbose, connectionMode);
     }
 
-    public TcpSocketPort(String ipName, int portNumber) throws UnknownHostException {
-        tcpSocketChannel = new TcpSocketChannel(ipName, portNumber, defaultTimeout, false, ConnectionMode.keepAlive);
+    public TcpSocketPort(String ip, int portNumber, int timeout, boolean verbose, ConnectionMode connectionMode) throws UnknownHostException {
+        this(InetAddress.getByName(ip), portNumber, timeout, verbose, connectionMode);
+    }
+
+    public TcpSocketPort(InetAddress inetAddress, int portNumber, boolean verbose, ConnectionMode connectionMode) {
+        this(inetAddress, portNumber, defaultTimeout, verbose, connectionMode);
+    }
+
+    public TcpSocketPort(InetAddress inetAddress, int portNumber) {
+        this(inetAddress, portNumber, defaultTimeout, false, ConnectionMode.keepAlive);
     }
 
     @Override

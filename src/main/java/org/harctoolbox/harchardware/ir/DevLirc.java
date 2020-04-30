@@ -87,6 +87,12 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
         this.verbose = verbose;
     }
 
+    public DevLirc(String deviceName, boolean verbose, Integer timeout) throws LircDeviceException {
+        this(deviceName, verbose);
+        if (timeout != null)
+            logger.log(Level.WARNING, "Timeout given, but ignored");
+    }
+
     public DevLirc(String deviceName) throws LircDeviceException {
         this(deviceName, false);
     }

@@ -24,9 +24,14 @@ import java.io.PrintStream;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.irp.IrpUtils;
 
 public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
+
+    private static final Logger logger = Logger.getLogger(IrTrans.class.getName());
+
     private final static String sendFlashedCommandAck = "**00018 RESULT OK";
 
     public static String makeUrl(String hostname, String remote, String command, Led led) {
@@ -66,7 +71,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
         }
 
         try {
-            IrTransIRDB irt = new IrTransIRDB(IrTransHost, verbose, defaultTimeout, IrTrans.Interface.tcpAscii);
+            IrTransIRDB irt = new IrTransIRDB(InetAddress.getByName(IrTransHost), verbose, defaultTimeout, IrTrans.Interface.tcpAscii);
             if (verbose)
                 System.out.println(irt.getVersion());
 
@@ -95,20 +100,38 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
         }
     }
 
-    public IrTransIRDB(String hostname, boolean verbose, int timeout, Interface interfaze) throws UnknownHostException {
+    public IrTransIRDB(String hostname, boolean verbose, Integer timeout) throws UnknownHostException {
+        this(InetAddress.getByName(hostname), verbose, timeout);
+    }
+
+    public IrTransIRDB(InetAddress hostname, boolean verbose, Integer timeout, Interface interfaze) {
         super(hostname, verbose, timeout, interfaze);
     }
 
-    public IrTransIRDB(String hostname, boolean verbose, int timeout) throws UnknownHostException {
-        super(hostname, verbose, timeout);
+    public IrTransIRDB(InetAddress hostname, boolean verbose, Integer timeout) {
+        this(hostname, verbose, timeout, Interface.tcpAscii);
+    }
+
+    public IrTransIRDB(InetAddress hostname, Integer port, boolean verbose, Integer timeout) {
+        this(hostname, verbose, timeout);
+        if (port != null)
+            logger.log(Level.WARNING, "Portnumber ignored");
+    }
+
+    public IrTransIRDB(InetAddress hostname, boolean verbose) {
+        this(hostname, verbose, null);
     }
 
     public IrTransIRDB(String hostname, boolean verbose) throws UnknownHostException {
-        super(hostname, verbose);
+        this(InetAddress.getByName(hostname), verbose, null);
+    }
+
+    public IrTransIRDB(InetAddress hostname) {
+        this(hostname, false);
     }
 
     public IrTransIRDB(String hostname) throws UnknownHostException {
-        super(hostname);
+        this(InetAddress.getByName(hostname));
     }
 
     @SuppressWarnings("SleepWhileInLoop")
@@ -177,7 +200,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
 
 
     public String makeUrl(String remote, String command, Led led) {
-        return makeUrl(this.irTransIP, remote, command, led);
+        return makeUrl(inetAddress.getCanonicalHostName(), remote, command, led);
     }
 
     private boolean sendFlashedCommandHttp(String remote, String command, Led led) throws MalformedURLException, IOException {
