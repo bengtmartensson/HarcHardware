@@ -634,7 +634,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
     @SuppressWarnings("SleepWhileHoldingLock")
     private synchronized String[] sendCommand(String cmd, int noLines, int delay, String expectedFirstLine) throws IOException {
-        if (verbose)
+        if (verbose && cmd != null)
             System.err.println("Sending command \"" + cmd + "\" to GlobalCache (" + hostIp + ")");
 
         tcpSocketChannel.connect();
@@ -643,12 +643,14 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                 tcpSocketChannel.readString();
             }
 
-        tcpSocketChannel.sendString(cmd + '\r');
+        if (cmd != null) {
+            tcpSocketChannel.sendString(cmd + '\r');
 
-        if (delay > 0) {
-            try {
-                Thread.sleep(delay);
-            } catch (InterruptedException ex) {
+            if (delay > 0) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException ex) {
+                }
             }
         }
         String[] result;
@@ -916,10 +918,11 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     @Override
     public synchronized ModulatedIrSequence capture() throws HarcHardwareException, InvalidArgumentException {
         try {
-            String[] result = sendCommand("get_IRL", 2, smallDelay, "IR Learner Enabled");
-            if (!result[0].equals("IR Learner Enabled"))
-                throw new HarcHardwareException("Hardware does not appear to support capturing");
-            IrSignal signal = parse(result[1]);
+            String[] result = sendCommand("get_IRL", 1, smallDelay, null);
+            if (result[0].equals("IR Learner Enabled"))
+                result = sendCommand(null, 1, 0, null);
+
+            IrSignal signal = parse(result[0]);
             return signal != null ? signal.toModulatedIrSequence(1) : null;
         } catch (IOException ex) {
             return null;
