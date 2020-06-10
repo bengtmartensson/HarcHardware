@@ -38,8 +38,8 @@ import java.util.Locale;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IWeb;
-import org.harctoolbox.ircore.XmlUtils;
 import org.harctoolbox.irp.IrpUtils;
+import org.harctoolbox.xml.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
