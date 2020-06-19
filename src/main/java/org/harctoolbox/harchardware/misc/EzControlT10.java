@@ -38,8 +38,8 @@ import java.util.Locale;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IWeb;
-import org.harctoolbox.ircore.XmlUtils;
 import org.harctoolbox.irp.IrpUtils;
+import org.harctoolbox.xml.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -959,16 +959,16 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
     }
 
     private void generateXml() {
-        XmlUtils.printDOM(System.out, xmlConfig(), null, null);
+        XmlUtils.printDOM(System.out, xmlConfig());
     }
 
     public void generateXml(File file) throws FileNotFoundException {
-        XmlUtils.printDOM(file, xmlConfig(), null, null, null);
+        XmlUtils.printDOM(file, xmlConfig());
     }
 
     public void getConfiguration(File file) {
         try {
-            XmlUtils.printDOM(file, xmlConfig(), null, null, null);
+            XmlUtils.printDOM(file, xmlConfig());
         } catch (FileNotFoundException e) {
             System.err.println(e.getMessage());
         }

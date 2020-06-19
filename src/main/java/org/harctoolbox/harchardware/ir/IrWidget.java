@@ -45,8 +45,8 @@ import org.harctoolbox.ircore.OddSequenceLengthException;
 // Presently, only the "irwidgetPulse" (case 0 in widget.cpp) is to be considered as implemented and tested.
 public class IrWidget implements IHarcHardware, ICapture {
 
-    /** Number of micro seconds in a count msPerTick. */
-    public static final int msPerTick = 100;
+    /** Number of micro seconds in a count. */
+    public static final int MICROS_IN_TICK = 100;
     public static final String defaultPortName = "/dev/ttyUSB0";
 
     private static final int baudRate = 115200;
@@ -243,7 +243,7 @@ public class IrWidget implements IHarcHardware, ICapture {
             throw new RuntimeException(ex);
         }
         InputStream inputStream = serialPort.getInputStream();
-        int toRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / msPerTick);
+        int toRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / MICROS_IN_TICK);
         data = new byte[toRead];
 
         byte last = -1;
@@ -385,7 +385,7 @@ public class IrWidget implements IHarcHardware, ICapture {
 
         if (debug > 0)
             System.out.println("IrWidget read pulses = " + pulses + ", gaps = " + gaps);
-        frequency = periods/IrCoreUtils.microseconds2seconds(bins * msPerTick);
+        frequency = periods/IrCoreUtils.microseconds2seconds(bins * MICROS_IN_TICK);
 
         times = new int[pulses + gaps];
         int index = 0;
@@ -399,7 +399,7 @@ public class IrWidget implements IHarcHardware, ICapture {
                 if (currentState)
                     currentCount += data[i];
                 else
-                    currentGap += msPerTick;
+                    currentGap += MICROS_IN_TICK;
             } else {
                 if (currentState) { // starting flash
                     currentGap += gapDuration(data[i]);
@@ -412,7 +412,7 @@ public class IrWidget implements IHarcHardware, ICapture {
                 } else { // starting gap
                     times[index] = pulseDuration(currentCount);
                     index++;
-                    currentGap = gapDuration(data[i-1]) + msPerTick;
+                    currentGap = gapDuration(data[i-1]) + MICROS_IN_TICK;
                     currentCount = 0;
                 }
             }
@@ -433,7 +433,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     }
 
     private int gapDuration(int pulses) {
-        return msPerTick - pulseDuration(pulses);
+        return MICROS_IN_TICK - pulseDuration(pulses);
     }
 
 

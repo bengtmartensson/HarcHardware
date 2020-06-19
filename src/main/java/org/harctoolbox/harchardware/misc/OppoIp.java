@@ -31,7 +31,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.harctoolbox.harchardware.Utils;
 import org.harctoolbox.harchardware.comm.UdpSocketChannel;
-import org.harctoolbox.ircore.XmlUtils;
+import org.harctoolbox.xml.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
