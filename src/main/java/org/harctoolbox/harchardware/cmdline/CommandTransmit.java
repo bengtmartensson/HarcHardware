@@ -43,6 +43,7 @@ import org.harctoolbox.irp.IrpException;
 import org.harctoolbox.irp.IrpParseException;
 import org.harctoolbox.irp.NameEngine;
 import org.harctoolbox.irp.UnknownProtocolException;
+import org.xml.sax.SAXException;
 
 @SuppressWarnings("FieldMayBeFinal")
 
@@ -87,7 +88,7 @@ public class CommandTransmit extends AbstractCommand {
     }
 
     public void transmit(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware)
-            throws IOException, NoSuchTransmitterException, InvalidArgumentException, UsageException, HarcHardwareException, IrpParseException, UnknownProtocolException, IrpException {
+            throws IOException, NoSuchTransmitterException, InvalidArgumentException, UsageException, HarcHardwareException, IrpParseException, UnknownProtocolException, IrpException, SAXException {
         commandLineArgs.assertClass();
         if (transmitter != null && transmitter.equals("?")) {
             ITransmitter hw = (ITransmitter) hardware;
@@ -127,7 +128,7 @@ public class CommandTransmit extends AbstractCommand {
         return sendRaw(hardware, tr, irSignal);
     }
 
-    private boolean transmitRender(CommandCommonOptions commandLineArgs, IHarcHardware hardware, Transmitter tr) throws UsageException, IrpParseException, IOException, UnknownProtocolException, IrpException, HarcHardwareException, NoSuchTransmitterException, InvalidArgumentException {
+    private boolean transmitRender(CommandCommonOptions commandLineArgs, IHarcHardware hardware, Transmitter tr) throws UsageException, IrpParseException, IOException, UnknownProtocolException, IrpException, HarcHardwareException, NoSuchTransmitterException, InvalidArgumentException, SAXException {
         IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
         IrSignal irSignal = irpDatabase.render(protocol, nameEngine.toMap());
         return sendRaw(hardware, tr, irSignal);

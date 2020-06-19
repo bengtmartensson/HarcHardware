@@ -31,6 +31,7 @@ import org.harctoolbox.harchardware.Version;
 import org.harctoolbox.irp.IrpDatabase;
 import org.harctoolbox.irp.IrpParseException;
 import org.harctoolbox.irp.UnknownProtocolException;
+import org.xml.sax.SAXException;
 
 @SuppressWarnings("PublicField")
 
@@ -48,7 +49,7 @@ public class CommandVersion extends AbstractCommand {
         return "This command returns the version. and licensing information for the program. If the --class option is given, instead the version of the hardware is reported.";
     }
 
-    public void version(PrintStream out, CommandIrpDatabaseOptions commandLineArgs) throws UsageException, IrpParseException, IOException, UnknownProtocolException {
+    public void version(PrintStream out, CommandIrpDatabaseOptions commandLineArgs) throws UsageException, IrpParseException, IOException, UnknownProtocolException, SAXException {
         if (shortForm || commandLineArgs.quiet)
             out.println(Version.version);
         else {

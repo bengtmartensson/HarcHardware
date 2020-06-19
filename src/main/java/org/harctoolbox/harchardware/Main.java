@@ -41,6 +41,7 @@ import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.irp.IrpException;
 import org.harctoolbox.irp.IrpParseException;
 import org.harctoolbox.irp.UnknownProtocolException;
+import org.xml.sax.SAXException;
 
 /**
  * This class contains a command line main routine, allowing command line access to most things in the package.
@@ -155,6 +156,9 @@ public final class Main extends CmdLineProgram {
         } catch (IrpException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
+        } catch (SAXException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_XML_ERROR, ex.getLocalizedMessage());
         }
     }
 }

@@ -42,6 +42,7 @@ import org.harctoolbox.irp.IrpDatabase;
 import org.harctoolbox.irp.IrpParseException;
 import org.harctoolbox.irp.Protocol;
 import org.harctoolbox.irp.UnknownProtocolException;
+import org.xml.sax.SAXException;
 
 @SuppressWarnings("FieldMayBeFinal")
 
@@ -78,7 +79,7 @@ public class CommandCapture extends AbstractCommand {
         return "This command captures a command from the selected hardware, using a non-demodulating sensor.";
     }
 
-    public void collect(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, HarcHardwareException, InvalidArgumentException, IOException, IrpParseException, UnknownProtocolException {
+    public void collect(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, HarcHardwareException, InvalidArgumentException, IOException, IrpParseException, UnknownProtocolException, SAXException {
         commandLineArgs.assertClass();
 
 
