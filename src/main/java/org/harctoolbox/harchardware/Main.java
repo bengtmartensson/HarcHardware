@@ -113,7 +113,7 @@ public final class Main extends CmdLineProgram {
                     commandGetCommands.getCommands(out, commandLineArgs, hardware);
                     break;
                 case "help":
-                    commandHelp.help(out, new CommandCommonOptions(), argumentParser, null);
+                    commandHelp.help(out, new CommandCommonOptions(), argumentParser, Version.documentationUrl);
                     break;
                 case "version":
                     if (commandLineArgs.hasClass()) {
