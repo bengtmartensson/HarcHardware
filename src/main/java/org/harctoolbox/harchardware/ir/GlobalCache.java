@@ -496,6 +496,10 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         this(InetAddress.getByName(hostIp != null ? hostIp : defaultGlobalCacheIP), verbose, timeout, compressed);
     }
 
+    public GlobalCache(InetAddress inetAddress, Integer portIsNotUsed, boolean verbose, Integer timeout) throws IOException {
+        this(inetAddress, verbose, timeout, false);
+    }
+
     public GlobalCache(InetAddress inetAddress, boolean verbose, Integer portNumber, Integer timeout) throws IOException {
         // ignores portNumber
         this(inetAddress, verbose, timeout, false);
