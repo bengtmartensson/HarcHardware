@@ -55,7 +55,6 @@ public class CommandVersion extends AbstractCommand {
         else {
             IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
             out.println(Version.versionString);
-            //setupDatabase();
             out.println("Database: " + (commandLineArgs.configFiles != null ? commandLineArgs.configFiles : "")
                     + " version: " + irpDatabase.getConfigFileVersion());
 
