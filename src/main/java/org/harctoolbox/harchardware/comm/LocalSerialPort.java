@@ -101,8 +101,9 @@ public abstract class LocalSerialPort implements IHarcHardware {
     private final FlowControl flowControl;
     private int timeout;
     protected boolean verbose;
+    private static final int DEFAULT_TIMEOUT = 0;
 
-    public LocalSerialPort(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, int timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public LocalSerialPort(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
         this.verbose = false;
         this.portName = portName;
         this.baud = baud;
@@ -110,7 +111,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
         this.stopBits = stopBits;
         this.parity = parity;
         this.flowControl = flowControl;
-        this.timeout = timeout;
+        this.timeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
     }
 
 

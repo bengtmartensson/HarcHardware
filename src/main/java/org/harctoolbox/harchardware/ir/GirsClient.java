@@ -24,6 +24,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -68,39 +69,41 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private final static String timeoutString = ".";
     private final static String separator = " ";
 
+    private final static int DEFAULT_BAUD = 115200;
+    private final static int DEFAULT_PORT = 33333;
+
     /**
      * Just for testing.
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        boolean verbose = false;
-        if (args[0].startsWith("/dev/") || args[0].toUpperCase(Locale.US).startsWith("COM")) {
-            int baud = args.length < 2 ? 115200 : Integer.parseInt(args[1]);
-            testGirsSerial(args[0], baud, verbose);
-        } else {
-            int port = args.length < 2 ? 33333 : Integer.parseUnsignedInt(args[1]);
-            testGirsTcp(args[0], port, verbose);
-        }
-    }
+        try {
+            boolean verbose = true;
+            GirsClient<?> gc;
+            if (args[0].startsWith("/dev/") || args[0].toUpperCase(Locale.US).startsWith("COM")) {
 
-    private static void testGirsTcp(String ip, int portnumber, boolean verbose) {
-        try (TcpSocketPort tcp = new TcpSocketPort(ip, portnumber, verbose, TcpSocketPort.ConnectionMode.keepAlive);
-            GirsClient<TcpSocketPort> gc = new GirsClient<>(tcp)) {
-            gc.testGirs();
-        } catch (UnknownHostException ex) {
-            logger.log(Level.SEVERE, "Unknown host: {0}", ip);
-        } catch (HarcHardwareException | IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private static void testGirsSerial(String portName, int baud, boolean verbose) {
-        try (LocalSerialPortBuffered serial = new LocalSerialPortBuffered(portName, baud, verbose);
-            GirsClient<LocalSerialPortBuffered> gc = new GirsClient<>(serial)) {
+                //int baud = args.length < 2 ? DEFAULT_BAUD : Integer.parseInt(args[1]);
+                gc = newInstance(args[0], verbose, null);
+            } else {
+                int port = args.length < 2 ? DEFAULT_PORT : Integer.parseUnsignedInt(args[1]);
+                gc = newInstance(InetAddress.getByName(args[0]), port, verbose, null);
+            }
             gc.testGirs();
         } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public static GirsClient<TcpSocketPort> newInstance(InetAddress inetAddress, Integer portnumber, boolean verbose, Integer timeout) throws UnknownHostException, HarcHardwareException, IOException {
+        TcpSocketPort tcp = new TcpSocketPort(inetAddress, portnumber != null ? portnumber : DEFAULT_PORT, timeout != null ? timeout : TcpSocketPort.defaultTimeout, verbose, TcpSocketPort.ConnectionMode.keepAlive);
+        GirsClient<TcpSocketPort> gc = new GirsClient<>(tcp);
+        return gc;
+    }
+
+    public static GirsClient<LocalSerialPortBuffered> newInstance(String portName, boolean verbose, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException, HarcHardwareException {
+        LocalSerialPortBuffered serial = new LocalSerialPortBuffered(portName, verbose, DEFAULT_BAUD, timeout);
+        GirsClient<LocalSerialPortBuffered> gc = new GirsClient<>(serial);
+        return gc;
     }
 
     private static String capitalize(String module) {
@@ -127,7 +130,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         this.hardware = hardware;
         this.useReceiveForCapture = false;
     }
-    
+
     private void testGirs() throws IOException, HarcHardwareException {
         open();
         getModules().forEach((module) -> this.testModule(module));

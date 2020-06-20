@@ -102,7 +102,11 @@ public class IrWidget implements IHarcHardware, ICapture {
      *
      */
     public IrWidget() {
-        this(defaultPortName, false, 0);
+        this(null, false, null);
+    }
+
+    public IrWidget(String portName) {
+        this(portName, false, null);
     }
 
     /**
@@ -110,10 +114,10 @@ public class IrWidget implements IHarcHardware, ICapture {
      *
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
      * @param verbose
-     * @param debug debug code
+     * @param timeout
      */
-    public IrWidget(String portName, boolean verbose, int debug) {
-        this(portName, defaultMode, defaultBeginTimeout, defaultCaptureMaxSize, defaultEndingTimeout, verbose, debug);
+    public IrWidget(String portName, boolean verbose, Integer timeout) {
+        this(portName, verbose, timeout, null, null);
     }
 
     /**
@@ -124,8 +128,8 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @param runTimeout
      * @param endingTimeout
      */
-    public IrWidget(String portName, int startTimeout, int runTimeout, int endingTimeout, boolean verbose) {
-        this(portName, defaultMode, startTimeout, runTimeout, endingTimeout, verbose, 0);
+    public IrWidget(String portName, boolean verbose, Integer startTimeout, Integer runTimeout, Integer endingTimeout) {
+        this(portName, verbose, null, startTimeout, runTimeout, endingTimeout);
     }
 
     /**
@@ -133,22 +137,23 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
      * @param mode Hardware mode.
      * @param verbose
-     * @param debug debug code
      * @param startTimeout
      * @param runTimeout
      * @param endingTimeout
      */
-    private IrWidget(String portName, Modes mode, int beginTimeout, int captureMaxSize, int endingTimeout, boolean verbose, int debug) {
-        this.mode = mode;
-        this.portName = portName;
-        this.debug = debug;
+    private IrWidget(String portName, boolean verbose, Modes mode, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout) {
+        this.mode = mode != null ? mode : defaultMode;
+        this.portName = portName != null ? portName : defaultPortName;
+        this.debug = 0;
         this.verbose = verbose;
-        this.beginTimeout = beginTimeout;
-        this.captureMaxSize = captureMaxSize;
-        this.endingTimeout = endingTimeout;
+        this.beginTimeout = beginTimeout != null ? beginTimeout : defaultBeginTimeout;
+        this.captureMaxSize = captureMaxSize != null ? captureMaxSize : defaultCaptureMaxSize;
+        this.endingTimeout = endingTimeout != null ? endingTimeout : defaultEndingTimeout;
     }
+
     @Override
     public void setDebug(int debug) {
+        this.debug = debug;
     }
 
     @Override
