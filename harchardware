@@ -1,0 +1,9 @@
+#!/bin/sh
+# Ad hoc wrapper, for development
+
+JAVA=java
+LIBRARY_PATH=/usr/local/share/irscrutinizer/Linux-amd64
+HOME="$(dirname -- "$(readlink -f -- "${0}")" )"
+JAR=`ls ${HOME}/target/HarcHardware-*-jar-with-dependencies.jar`
+
+exec "${JAVA}" -Djava.library.path=${LIBRARY_PATH} -jar "${JAR}" "$@"
