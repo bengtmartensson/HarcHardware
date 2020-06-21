@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.comm;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import org.harctoolbox.harchardware.Utils;
@@ -55,12 +52,12 @@ public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesC
                 }
                 port.close();
             }
-        } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
+        } catch (IOException ex) {
             System.err.println(ex.getMessage());
         }
     }
 
-    public LocalSerialPortRaw(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public LocalSerialPortRaw(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, int timeout, boolean verbose) throws IOException {
         super(portName, baud, length, stopBits, parity, flowControl, timeout);
     }
 
@@ -93,6 +90,5 @@ public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesC
 
     @Override
     public void setDebug(int debug) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

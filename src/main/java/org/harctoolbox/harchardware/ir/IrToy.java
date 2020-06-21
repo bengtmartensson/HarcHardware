@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -129,11 +126,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
 //
 //                System.out.println(success);
             }
-        } catch (NoSuchPortException ex) {
-            System.err.println("Port for IRToy " + portName + " was not found");
-        } catch (PortInUseException ex) {
-            System.err.println("Port for IRToy in use");
-        } catch (HarcHardwareException | UnsupportedCommOperationException | IOException ex) {
+        } catch (HarcHardwareException | IOException ex) {
             System.err.println(ex.getMessage());
         } finally {
             if (toy != null) {
@@ -153,23 +146,23 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     private int IOdata = 0;
     private boolean useSignalingLed;
 
-    public IrToy() throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public IrToy() throws IOException {
         this(defaultPortName);
     }
 
-    public IrToy(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public IrToy(String portName) throws IOException {
         this(portName, false);
     }
 
-    public IrToy(String portName, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public IrToy(String portName, boolean verbose) throws IOException {
         this(portName, verbose, null);
     }
 
-    public IrToy(String portName, boolean verbose, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public IrToy(String portName, boolean verbose, Integer timeout) throws IOException {
         this(portName, verbose, timeout != null ? timeout : defaultBeginTimeout, defaultBaudRate);
     }
 
-    public IrToy(String portName, boolean verbose, Integer timeout, int baudRate) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public IrToy(String portName, boolean verbose, Integer timeout, int baudRate) throws IOException {
         this(portName, verbose, timeout, baudRate, defaultCaptureMaxSize, defaultFlowControl);
     }
 
@@ -182,7 +175,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
 //    }
 
     public IrToy(String portName, boolean verbose, Integer timeout, int baudRate, int maxLearnLength, LocalSerialPort.FlowControl flowControl)
-            throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+            throws IOException {
         super(LocalSerialPortRaw.class, portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
         this.captureMaxSize = maxLearnLength;
     }

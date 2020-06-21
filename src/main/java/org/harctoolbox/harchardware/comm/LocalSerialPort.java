@@ -33,6 +33,8 @@ import java.util.Enumeration;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 
+// NOTE: public functions must not throw any gnu.io.*Exceptions!!
+
 public abstract class LocalSerialPort implements IHarcHardware {
 
     public final static String defaultPort = "/dev/ttyS0";
@@ -41,9 +43,9 @@ public abstract class LocalSerialPort implements IHarcHardware {
     private static ArrayList<String> cachedPortNames = null;
     private final static int maxtries = 3;
 
-    public static String getSerialPortName(int portNumber) throws IOException, NoSuchPortException {
+    public static String getSerialPortName(int portNumber) throws NonExistingPortException {
         @SuppressWarnings("unchecked")
-                Enumeration<CommPortIdentifier> portEnum = CommPortIdentifier.getPortIdentifiers();
+        Enumeration<CommPortIdentifier> portEnum = CommPortIdentifier.getPortIdentifiers();
         int nr = 0;
         while (portEnum.hasMoreElements()) {
             CommPortIdentifier portIdentifier = portEnum.nextElement();
@@ -53,7 +55,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
             if (nr == portNumber)
                 return portIdentifier.getName();
         }
-        throw new NoSuchPortException();
+        throw new NonExistingPortException(Integer.toString(portNumber));
     }
 
     /**
@@ -103,7 +105,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
     protected boolean verbose;
     private static final int DEFAULT_TIMEOUT = 0;
 
-    public LocalSerialPort(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public LocalSerialPort(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, Integer timeout) {
         this.verbose = false;
         this.portName = portName;
         this.baud = baud;
@@ -115,20 +117,21 @@ public abstract class LocalSerialPort implements IHarcHardware {
     }
 
 
-    public LocalSerialPort(String portName, int baud) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public LocalSerialPort(String portName, int baud) {
         this(portName, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
         this.verbose = false;
     }
 
-    public LocalSerialPort(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public LocalSerialPort(String portName) {
         this(portName, 9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
         this.verbose = false;
     }
 
-    public LocalSerialPort(int portNumber) throws IOException, NoSuchPortException, PortInUseException, UnsupportedCommOperationException {
+    public LocalSerialPort(int portNumber) throws NonExistingPortException {
         this(getSerialPortName(portNumber), 9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
         this.verbose = false;
     }
+
     private void lowLevelOpen() throws NoSuchPortException, PortInUseException, IOException {
         String realPath = canonicalizePortName(portName);
         CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(realPath);
@@ -141,16 +144,20 @@ public abstract class LocalSerialPort implements IHarcHardware {
     /**
      * Opens the device.
      *
+     * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      * @throws HarcHardwareException Bundles RXTX exceptions together.
      * @throws IOException
      */
     @Override
-    public void open() throws HarcHardwareException, IOException {
+    public void open() throws NonExistingPortException, HarcHardwareException, IOException {
         boolean success = false;
         try {
             lowLevelOpen();
             success = true;
-        } catch (NoSuchPortException | PortInUseException ex) {
+        } catch (NoSuchPortException ex) {
+            commPort = null;
+            throw new NonExistingPortException(portName);
+        } catch (PortInUseException ex) {
             commPort = null;
             throw new HarcHardwareException(ex);
         }

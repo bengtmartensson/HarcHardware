@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -45,7 +42,7 @@ public abstract class IrSerial<T extends LocalSerialPort> implements IHarcHardwa
     private final Class<T> clazz;
 
     public IrSerial(Class<T> clazz, String portName, int baudRate, int dataSize, int stopBits, LocalSerialPort.Parity parity, LocalSerialPort.FlowControl flowControl, int timeout, boolean verbose)
-            throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+            throws IOException {
         this.clazz = clazz;
         this.portName = portName;
         this.baudRate = baudRate;

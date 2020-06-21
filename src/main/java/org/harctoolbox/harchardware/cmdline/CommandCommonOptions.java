@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.cmdline;
 
 import com.beust.jcommander.Parameter;
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -57,7 +54,7 @@ public class CommandCommonOptions extends CommandDecodeParameterOptions {
     @Parameter(names = {"-V", "--verbose"}, description = "Execute commands verbosely.")
     private boolean verbose;
 
-    public IHarcHardware hardware() throws UsageException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException, NoSuchPortException, PortInUseException, UnsupportedCommOperationException {
+    public IHarcHardware hardware() throws UsageException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
         if (className == null || className.isEmpty())
             return null;
 

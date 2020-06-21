@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -89,7 +86,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
                 gc = newInstance(InetAddress.getByName(args[0]), port, verbose, null);
             }
             gc.testGirs();
-        } catch (NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
+        } catch (IOException | HarcHardwareException ex) {
             Logger.getLogger(GirsClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -100,7 +97,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         return gc;
     }
 
-    public static GirsClient<LocalSerialPortBuffered> newInstance(String portName, boolean verbose, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException, HarcHardwareException {
+    public static GirsClient<LocalSerialPortBuffered> newInstance(String portName, boolean verbose, Integer timeout) throws IOException, HarcHardwareException {
         LocalSerialPortBuffered serial = new LocalSerialPortBuffered(portName, verbose, DEFAULT_BAUD, timeout);
         GirsClient<LocalSerialPortBuffered> gc = new GirsClient<>(serial);
         return gc;

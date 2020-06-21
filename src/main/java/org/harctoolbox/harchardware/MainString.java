@@ -21,9 +21,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.internal.DefaultConsole;
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -199,12 +196,12 @@ public class MainString {
                     System.out.println(s);
             }
             hardware.close();
-        } catch (IOException | PortInUseException | UnsupportedCommOperationException | HarcHardwareException ex) {
+        } catch (IOException | HarcHardwareException ex) {
             System.err.println(ex.getMessage());
             System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
-        } catch (NoSuchPortException ex) {
-            System.err.println("No such port: " + ex.getMessage());
-            System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
+//        } catch (NoSuchPortException ex) {
+//            System.err.println("No such port: " + ex.getMessage());
+//            System.exit(IrpUtils.EXIT_FATAL_PROGRAM_FAILURE);
         }
     }
 

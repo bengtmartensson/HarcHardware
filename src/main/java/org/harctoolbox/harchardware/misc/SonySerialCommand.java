@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.misc;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
@@ -76,7 +73,7 @@ public class SonySerialCommand {
             try {
                 port = new LocalSerialPortRaw("/dev/ttyS0", 38400, 8, 1, LocalSerialPort.Parity.EVEN, LocalSerialPort.FlowControl.NONE, 2000, true);
                 ((IHarcHardware) port).open();
-            } catch (NoSuchPortException | HarcHardwareException | PortInUseException | UnsupportedCommOperationException | IOException ex) {
+            } catch (HarcHardwareException | IOException ex) {
                 System.err.println(ex.getMessage());
                 System.exit(IrpUtils.EXIT_IO_ERROR);
             }

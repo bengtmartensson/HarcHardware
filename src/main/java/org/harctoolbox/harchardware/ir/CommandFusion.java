@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -112,7 +109,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
                     //DecodeIR.invoke(seq);
                 }
             }
-        } catch (InvalidArgumentException | Pronto.NonProntoFormatException | NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
+        } catch (InvalidArgumentException | Pronto.NonProntoFormatException | IOException | HarcHardwareException ex) {
             ex.printStackTrace();
             System.exit(1);
         }
@@ -193,30 +190,30 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     private boolean stopRequested = false;
     private String versionString = null;
 
-    public CommandFusion() throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public CommandFusion() throws IOException {
         this(DEFAULTPORTNAME, DEFAULTBAUDRATE, false);
     }
 
-    public CommandFusion(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public CommandFusion(String portName) throws IOException {
         this(portName, DEFAULTBAUDRATE, false);
     }
 
-    public CommandFusion(String portName, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public CommandFusion(String portName, boolean verbose) throws IOException {
         this(portName, DEFAULTBAUDRATE, verbose);
     }
 
-    public CommandFusion(String portName, boolean verbose, Integer timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public CommandFusion(String portName, boolean verbose, Integer timeout) throws IOException {
         this(portName, DEFAULTBAUDRATE, verbose);
         if (timeout != null)
             logger.log(Level.WARNING, "Timeout given, but ignored");
     }
 
-    public CommandFusion(String portName, int baudRate, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public CommandFusion(String portName, int baudRate, boolean verbose) throws IOException {
         super(LocalSerialPortRaw.class, portName, baudRate, DATASIZE, STOPBITS, PARITY, DEFAULTFLOWCONTROL, -1/*beginTimeout*/, verbose);
     }
 
     // Necessary for the HardwareManager. Do not "clean up".
-    public CommandFusion(String portName, int baudRate, int timeoutNotUsed, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public CommandFusion(String portName, int baudRate, int timeoutNotUsed, boolean verbose) throws IOException {
         this(portName, baudRate, verbose);
     }
 
