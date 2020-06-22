@@ -51,7 +51,7 @@ public class CommandCommonOptions extends CommandDecodeParameterOptions {
     @Parameter(names = {"-T", "--timeout"}, description = "Timeout in milliseconds.")
     private Integer timeout = null;//defaultTimeout;
 
-    @Parameter(names = {"-V", "--verbose"}, description = "Execute commands verbosely.")
+    @Parameter(names = {"-v", "--verbose"}, description = "Execute commands verbosely.")
     private boolean verbose;
 
     public IHarcHardware hardware() throws UsageException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
