@@ -32,7 +32,7 @@ public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesC
                 System.out.println(name);
             });
 
-            LocalSerialPortRaw port = new LocalSerialPortRaw(defaultPort, 38400, 8, 1, Parity.EVEN, FlowControl.NONE, 10000, true);
+            LocalSerialPortRaw port = new LocalSerialPortRaw(defaultPort, 38400, 8, StopBits.ONE, Parity.EVEN, FlowControl.NONE, 10000, true);
 
             if (args.length == 0) {
                 int upper = 0x1;
@@ -57,7 +57,7 @@ public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesC
         }
     }
 
-    public LocalSerialPortRaw(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, int timeout, boolean verbose) throws IOException {
+    public LocalSerialPortRaw(String portName, int baud, int length, StopBits stopBits, Parity parity, FlowControl flowControl, int timeout, boolean verbose) throws IOException {
         super(portName, baud, length, stopBits, parity, flowControl, timeout);
     }
 

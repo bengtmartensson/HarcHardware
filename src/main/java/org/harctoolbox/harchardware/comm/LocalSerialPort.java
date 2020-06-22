@@ -42,6 +42,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
 
     private static ArrayList<String> cachedPortNames = null;
     private final static int maxtries = 3;
+    private static final int DEFAULT_TIMEOUT = 0;
 
     public static String getSerialPortName(int portNumber) throws NonExistingPortException {
         @SuppressWarnings("unchecked")
@@ -98,14 +99,13 @@ public abstract class LocalSerialPort implements IHarcHardware {
     private final String portName;
     private final int baud;
     private final int length;
-    private final int stopBits;
+    private final StopBits stopBits;
     private final Parity parity;
     private final FlowControl flowControl;
     private int timeout;
     protected boolean verbose;
-    private static final int DEFAULT_TIMEOUT = 0;
 
-    public LocalSerialPort(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, Integer timeout) {
+    public LocalSerialPort(String portName, int baud, int length, StopBits stopBits, Parity parity, FlowControl flowControl, Integer timeout) {
         this.verbose = false;
         this.portName = portName;
         this.baud = baud;
@@ -118,17 +118,17 @@ public abstract class LocalSerialPort implements IHarcHardware {
 
 
     public LocalSerialPort(String portName, int baud) {
-        this(portName, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
+        this(portName, baud, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, 0);
         this.verbose = false;
     }
 
     public LocalSerialPort(String portName) {
-        this(portName, 9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
+        this(portName, 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, 0);
         this.verbose = false;
     }
 
     public LocalSerialPort(int portNumber) throws NonExistingPortException {
-        this(getSerialPortName(portNumber), 9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
+        this(getSerialPortName(portNumber), 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, 0);
         this.verbose = false;
     }
 
@@ -168,7 +168,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
         if (commPort instanceof gnu.io.SerialPort) {
             SerialPort serialPort = (SerialPort) commPort;
             try {
-                serialPort.setSerialPortParams(baud, length, stopBits, parity.ordinal());
+                serialPort.setSerialPortParams(baud, length, stopBits.value(), parity.ordinal());
             } catch (UnsupportedCommOperationException ex) {
                 throw new HarcHardwareException(ex);
             }
@@ -256,6 +256,17 @@ public abstract class LocalSerialPort implements IHarcHardware {
         } catch (InterruptedException ex) {
         }
         setDTR(true);
+    }
+
+    public enum StopBits {
+        NONE, // 0
+        ONE, // 1
+        TWO, // 2
+        ONE_AND_A_HALF; // 3
+
+        private int value() {
+            return ordinal();
+        }
     }
 
     public enum Parity {

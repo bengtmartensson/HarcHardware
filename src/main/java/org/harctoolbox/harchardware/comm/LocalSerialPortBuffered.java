@@ -17,7 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.comm;
 
-import gnu.io.SerialPort;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,7 +31,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
 
     public static void main(String[] args) {
         ArrayList<String> names;
-        try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 9600, 8, 1, Parity.NONE, FlowControl.NONE, 10000)) {
+        try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, 10000)) {
             names = getSerialPortNames(false);
             names.forEach((name) -> {
                 System.out.println(name);
@@ -54,13 +53,13 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
 
     private BufferedReader bufferedInStream;
 
-    public LocalSerialPortBuffered(String portName, boolean verbose, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, Integer timeout) {
+    public LocalSerialPortBuffered(String portName, boolean verbose, int baud, int length, StopBits stopBits, Parity parity, FlowControl flowControl, Integer timeout) {
         super(portName, baud, length, stopBits, parity, flowControl, timeout);
         this.verbose = verbose;
     }
 
     public LocalSerialPortBuffered(String portName, boolean verbose, int baud, Integer timeout) {
-        this(portName, verbose, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, timeout);
+        this(portName, verbose, baud, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, timeout);
     }
 
     public LocalSerialPortBuffered(String portName, boolean verbose, int baud) {
