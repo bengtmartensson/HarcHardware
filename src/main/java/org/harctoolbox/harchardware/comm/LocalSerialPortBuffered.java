@@ -20,14 +20,12 @@ package org.harctoolbox.harchardware.comm;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.List;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
+import org.harctoolbox.ircore.IrCoreUtils;
 
 public final class LocalSerialPortBuffered extends LocalSerialPort implements ICommandLineDevice {
-
-    public static final int defaultBaudRate = 9600;
 
     public static void main(String[] args) {
         List<String> names;
@@ -59,7 +57,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     }
 
     public LocalSerialPortBuffered(String portName, boolean verbose, int baud, Integer timeout) {
-        this(portName, verbose, baud, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, timeout);
+        this(portName, verbose, baud, DEFAULT_DATABITS, DEFAULT_STOPBITS, DEFAULT_PARITY, DEFAULT_FLOWCONTROL, timeout);
     }
 
     public LocalSerialPortBuffered(String portName, boolean verbose, int baud) {
@@ -71,7 +69,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     }
 
     public LocalSerialPortBuffered(String portName) {
-        this(portName, defaultBaudRate);
+        this(portName, DEFAULT_BAUD);
     }
 
     public LocalSerialPortBuffered(int portNumber) throws NonExistingPortException {
@@ -81,14 +79,14 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     @Override
     public void open() throws HarcHardwareException, IOException {
         super.open();
-        bufferedInStream = new BufferedReader(new InputStreamReader(inStream, Charset.forName("US-ASCII")));
+        bufferedInStream = new BufferedReader(new InputStreamReader(inStream, IrCoreUtils.DUMB_CHARSET));
     }
 
     @Override
     public void sendString(String cmd) throws IOException {
         if (verbose)
             System.err.println("LocalSerialPortBuffered.sendString: Sent '" + escapeCommandLine(cmd) + "'.");
-        sendBytes(cmd.getBytes(Charset.forName("US-ASCII")));
+        sendBytes(cmd.getBytes(IrCoreUtils.DUMB_CHARSET));
     }
 
     //*@Override
@@ -133,10 +131,5 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     @Override
     public boolean ready() throws IOException {
         return bufferedInStream.ready();
-    }
-
-    @Override
-    public void setDebug(int debug) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

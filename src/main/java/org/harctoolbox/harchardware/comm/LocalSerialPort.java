@@ -266,6 +266,10 @@ public abstract class LocalSerialPort implements IHarcHardware {
         setDTR(true);
     }
 
+    @Override
+    public void setDebug(int dbg) {
+    }
+
     public enum StopBits {
         NONE, // 0
         ONE, // 1
