@@ -263,9 +263,9 @@
             <version>0.9.2</version>
         </dependency>
         <dependency>
-            <groupId>gnu.io</groupId>
-            <artifactId>RXTX</artifactId>
-            <version>2.2pre2h</version>
+            <groupId>com.neuronrobotics</groupId>
+            <artifactId>nrjavaserial</artifactId>
+            <version>5.2.1</version>
 	</dependency>
         <dependency>
             <groupId>org.harctoolbox</groupId>
