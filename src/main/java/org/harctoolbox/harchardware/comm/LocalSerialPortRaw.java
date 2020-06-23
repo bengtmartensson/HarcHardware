@@ -86,9 +86,4 @@ public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesC
     public void sendByte(byte b) throws IOException {
         outStream.write(b);
     }
-
-
-    @Override
-    public void setDebug(int debug) {
-    }
 }
