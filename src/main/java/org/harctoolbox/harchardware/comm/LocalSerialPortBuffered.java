@@ -21,7 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.List;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 
@@ -30,7 +30,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     public static final int defaultBaudRate = 9600;
 
     public static void main(String[] args) {
-        ArrayList<String> names;
+        List<String> names;
         try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, 10000)) {
             names = getSerialPortNames(false);
             names.forEach((name) -> {

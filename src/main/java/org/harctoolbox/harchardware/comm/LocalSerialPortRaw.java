@@ -18,21 +18,21 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.comm;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import org.harctoolbox.harchardware.Utils;
-import org.harctoolbox.harchardware.misc.SonySerialCommand;
+import org.harctoolbox.harchardware.misc.SonySerialCommand; // just for main().
 
 public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesCommand {
 
     public static void main(String[] args) {
-        ArrayList<String> names;
+        List<String> names;
         try {
             names = getSerialPortNames(false);
             names.forEach((name) -> {
                 System.out.println(name);
             });
 
-            LocalSerialPortRaw port = new LocalSerialPortRaw(defaultPort, 38400, 8, StopBits.ONE, Parity.EVEN, FlowControl.NONE, 10000, true);
+            LocalSerialPortRaw port = new LocalSerialPortRaw(DEFAULT_PORT, 38400, 8, StopBits.ONE, Parity.EVEN, FlowControl.NONE, 10000, true);
 
             if (args.length == 0) {
                 int upper = 0x1;
