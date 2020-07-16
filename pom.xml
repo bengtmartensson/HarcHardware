@@ -7,7 +7,7 @@
     <groupId>org.harctoolbox</groupId>
     <artifactId>HarcHardware</artifactId>
     <packaging>jar</packaging>
-    <version>2.2.7</version>
+    <version>2.2.8-SNAPSHOT</version>
     <name>${project.artifactId}</name>
     <licenses>
         <license>
@@ -278,7 +278,7 @@
         <dependency>
             <groupId>org.harctoolbox</groupId>
             <artifactId>IrpTransmogrifier</artifactId>
-            <version>1.2.7</version>
+            <version>1.2.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.eclipsesource.minimal-json</groupId>
