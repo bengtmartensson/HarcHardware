@@ -51,7 +51,6 @@ public class IrWidget implements IHarcHardware, ICapture {
 
     private static final int baudRate = 115200;
     private static final int mask = 0x3F;
-    private static final Modes defaultMode = Modes.irwidgetPulse;
     private static final int shortDelay = 20;
     private static final int longDelay = 200;
 
@@ -84,7 +83,6 @@ public class IrWidget implements IHarcHardware, ICapture {
 
     private CommPortIdentifier portIdentifier;
     private CommPort commPort;
-    private Modes mode;
     private String portName;
     private int debug;
     private byte[] data;
@@ -123,26 +121,12 @@ public class IrWidget implements IHarcHardware, ICapture {
     /**
      * Constructs new IrWidget.
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
+     * @param beginTimeout
+     * @param captureMaxSize
      * @param verbose
-     * @param startTimeout
-     * @param runTimeout
      * @param endingTimeout
      */
-    public IrWidget(String portName, boolean verbose, Integer startTimeout, Integer runTimeout, Integer endingTimeout) {
-        this(portName, verbose, null, startTimeout, runTimeout, endingTimeout);
-    }
-
-    /**
-     * Constructs new IrWidget.
-     * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
-     * @param mode Hardware mode.
-     * @param verbose
-     * @param startTimeout
-     * @param runTimeout
-     * @param endingTimeout
-     */
-    private IrWidget(String portName, boolean verbose, Modes mode, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout) {
-        this.mode = mode != null ? mode : defaultMode;
+    public IrWidget(String portName, boolean verbose, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout) {
         this.portName = portName != null ? portName : defaultPortName;
         this.debug = 0;
         this.verbose = verbose;
@@ -235,7 +219,7 @@ public class IrWidget implements IHarcHardware, ICapture {
         ModulatedIrSequence seq = null;
         RXTXPort serialPort = (RXTXPort) commPort;
 
-        setMode(mode);
+        setMode();
         try {
             serialPort.clearCommInput();
         } catch (UnsupportedCommOperationException ex) {
@@ -342,22 +326,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     private boolean compute(int noBytes) {
         if (noBytes == 0)
             return false;
-        return mode.pulse() ? computePulses(noBytes) : computeTimes(noBytes);
-    }
 
-    private boolean computeTimes(int noBytes) {
-        int offset = 2;
-        dataLength = noBytes - offset;
-        times = new int[dataLength/2];
-        for (int i = 0; i < dataLength/2; i++) {
-            int t = toIntAsUnsigned(data[2*i+offset]) | (toIntAsUnsigned(data[2*i+1+offset]) << 8);
-            t = ((t&0x8000) != 0) ? (t&0x7FFF) : -t;
-            times[i] = t*16;
-        }
-        return true;
-    }
-
-    private boolean computePulses(int noBytes) {
         // replace the existing, incremental data by actual count in the intervals
         for (int i = 0; i < noBytes-1; i++)
             data[i] = (byte)(mask & (data[i+1] - data[i]));
@@ -437,35 +406,15 @@ public class IrWidget implements IHarcHardware, ICapture {
     }
 
 
-    private void setMode(Modes mode) {
+    private void setMode() {
         try {
             RXTXPort serial = (RXTXPort) commPort;
             serial.setDTR(false);
             serial.setRTS(false);
             Thread.sleep(shortDelay); // ???
-            switch (mode) {
-                case irwidgetPulse:            // Kevin's case 0,2
-                    serial.setDTR(true);
-                    Thread.sleep(longDelay);
-                    serial.setRTS(true);
-                    break;
-                case miniPovPulse:            // Kevin's case 1
-                    serial.setRTS(true);
-                    Thread.sleep(longDelay);
-                    serial.setDTR(true);
-                    break;
-                case irwidgetTime:            // Kevin's case 3
-                    serial.setRTS(true);
-                    serial.setDTR(true);
-                    break;
-                case miniPovTime:            // Kevin's case 4
-                    serial.setDTR(true);
-                    serial.setRTS(true);
-                    break;
-                default:
-                    // This cannot happen
-                    assert (false);
-            }
+            serial.setDTR(true);
+            Thread.sleep(longDelay);
+            serial.setRTS(true);
         } catch (InterruptedException ex) {
             System.err.println("Interrupted; likely programming error.");
         }
@@ -475,47 +424,5 @@ public class IrWidget implements IHarcHardware, ICapture {
         RXTXPort serial = (RXTXPort) commPort;
         serial.setDTR(false);
         serial.setRTS(false);
-    }
-
-    /**
-     * Different hardware and different operating modes supported (more-or-less) by the software.
-     * Presently, only irwidgetPulse is to be considered as tested.
-     */
-    private enum Modes {
-        irwidgetPulse,
-        irwidgetTime,
-        miniPovPulse,
-        miniPovTime;
-
-        public static boolean pulse(Modes m) {
-            return (m == irwidgetPulse) || (m == miniPovPulse);
-        }
-
-        public boolean pulse() {
-            return (this == irwidgetPulse) || (this == miniPovPulse);
-        }
-
-        public static Modes lanidro(int i) {
-            int j = 0;
-            for (Modes m : values()) {
-                if (i == j)
-                    return m;
-                j++;
-            }
-            return null;
-        }
-
-        @Override
-        public String toString() {
-            return this == irwidgetPulse ? "IrWidget count"
-                    : this == irwidgetTime ? "IrWidget time"
-                    : this == miniPovPulse ? "MiniPOV count"
-                    : this == miniPovTime ? "MiniPOV time"
-                    : "?";
-        }
-
-        public static String toString(Modes m) {
-            return m.toString();
-        }
     }
 }
