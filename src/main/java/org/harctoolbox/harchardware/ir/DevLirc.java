@@ -21,10 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.harctoolbox.devslashlirc.LircDevice;
 import org.harctoolbox.devslashlirc.LircDeviceException;
 import org.harctoolbox.devslashlirc.Mode2LircDevice;
 import org.harctoolbox.devslashlirc.NotSupportedException;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.harchardware.Utils;
 import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.ModulatedIrSequence;
@@ -83,7 +85,8 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
     private boolean stopRequested;
 
     public DevLirc(String deviceName, boolean verbose) throws LircDeviceException {
-        device = new Mode2LircDevice(deviceName);
+        String devName = (deviceName == null || deviceName.equals(Utils.DEFAULT)) ? LircDevice.defaultDeviceName : deviceName;
+        device = new Mode2LircDevice(devName);
         this.verbose = verbose;
     }
 

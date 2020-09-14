@@ -87,15 +87,15 @@ public class CommandTransmit extends AbstractCommand {
                 + "or a raw signal in Pronto Hex- or raw format.";
     }
 
-    public void transmit(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware)
+    public boolean transmit(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware)
             throws IOException, NoSuchTransmitterException, InvalidArgumentException, UsageException, HarcHardwareException, IrpParseException, UnknownProtocolException, IrpException, SAXException {
-        commandLineArgs.assertClass();
+        commandLineArgs.assertNonNullClass();
         if (transmitter != null && transmitter.equals("?")) {
             ITransmitter hw = (ITransmitter) hardware;
             String[] transmitters = hw.getTransmitterNames();
             for (String trnsmit : transmitters)
                 out.println(trnsmit);
-            return;
+            return true;
         }
         Transmitter tr = transmitter != null ? ((ITransmitter) hardware).getTransmitter(transmitter) : null;
 
@@ -111,6 +111,7 @@ public class CommandTransmit extends AbstractCommand {
         else
             status = transmitRaw(hardware, tr);
         logger.log(Level.INFO, "Sending {0}.", status ? "succeded" : "failed");
+        return status;
     }
 
     private boolean transmitNamedCommand(IHarcHardware hardware, Transmitter tr) throws IOException, NoSuchTransmitterException {
@@ -122,7 +123,11 @@ public class CommandTransmit extends AbstractCommand {
         MultiParser prontoRawParser = MultiParser.newIrCoreParser(args);
         IrSignal irSignal = prontoRawParser.toIrSignal(frequency, trailingGap);
         if (irSignal == null) {
-            logger.log(Level.INFO, "Could not parse as IrSignal: {0}", String.join(" ", args));
+            logger.log(Level.WARNING, "Could not parse as IrSignal: {0}", String.join(" ", args));
+            return false;
+        }
+        if (irSignal.isEmpty()) {
+            logger.log(Level.WARNING, "No signal given");
             return false;
         }
         return sendRaw(hardware, tr, irSignal);

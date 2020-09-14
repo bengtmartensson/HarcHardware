@@ -57,7 +57,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     private final static int smallDelay = 10; // ms
     private final static int gcPort = 4998;
     private final static int gcFirstSerialPort = 4999;
-    public  final static String defaultGlobalCacheIP = "192.168.1.70";
+    public  final static String DEFAULT_IP = "192.168.1.70";
     public  final static int defaultGlobalCachePort = 1;
     public  final static String sendIrPrefix = "sendir";
     private final static int defaultSocketTimeout = 2000;
@@ -72,6 +72,10 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
      * GlobalCache default connector
      */
     private final static int defaultConnector = 1;
+
+    public static String expandIP(String IP) {
+        return IP == null || IP.equals(Utils.DEFAULT) ? DEFAULT_IP : IP;
+    }
 
     private static String camelCase2uppercase(String cc) {
         StringBuilder result = new StringBuilder(32);
@@ -210,9 +214,10 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         System.exit(exitcode);
     }
 
+    // Probably not entirely working...
     public static void main(String[] args) throws InvalidArgumentException {
         //String str = "sendir,4:1,0,38380,1,69,347,173,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,1527,347,87,22,3692";
-        String hostname = defaultGlobalCacheIP;
+        String hostname = DEFAULT_IP;
         int connector = 1;
         int module = 2;
         int count = 1;
@@ -493,7 +498,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     public GlobalCache(String hostIp, boolean verbose, Integer timeout, boolean compressed) throws UnknownHostException, IOException {
-        this(InetAddress.getByName(hostIp != null ? hostIp : defaultGlobalCacheIP), verbose, timeout, compressed);
+        this(InetAddress.getByName(expandIP(hostIp)), verbose, timeout, compressed);
     }
 
     public GlobalCache(InetAddress inetAddress, Integer portIsNotUsed, boolean verbose, Integer timeout) throws IOException {

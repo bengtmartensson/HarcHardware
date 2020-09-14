@@ -17,16 +17,24 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Locale;
+import org.harctoolbox.ircore.ThisCannotHappenException;
 
 /**
  * This class contains a few static support function.
  */
 public class Utils {
+
+    private static final String NATIVE = "native";
+    public static final String DEFAULT = "default";
 
     public static String getHostname() {
         String hostname = System.getenv("HOSTNAME");
@@ -69,6 +77,36 @@ public class Utils {
             index += bytesRead;
         }
         return result;
+    }
+
+    public static File libraryDir(String applicationHome) {
+        File appHome = new File(applicationHome);
+        File stem = appHome.getName().equals("target") ? appHome.getParentFile() : appHome;
+        File nativeDir = new File(stem, NATIVE);
+        if (nativeDir.exists())
+            stem = nativeDir;
+        String subFolderName = (System.getProperty("os.name").startsWith("Windows")
+                ? "Windows"
+                : System.getProperty("os.name"))
+                + '-' + System.getProperty("os.arch").toLowerCase(Locale.US);
+        return new File(stem, subFolderName);
+    }
+
+    public static String findApplicationHome(String appHome, Class<?> mainClass, String appName) {
+        String enviromentVarName = appName.toUpperCase(Locale.US) + "HOME";
+        String applicationHome = appHome != null ? appHome : System.getenv(enviromentVarName);
+        if (applicationHome == null) {
+            URL url = mainClass.getProtectionDomain().getCodeSource().getLocation();
+            File dir;
+            try {
+                dir = new File(url.toURI()).getParentFile();
+            } catch (URISyntaxException ex) {
+                throw new ThisCannotHappenException(ex);
+            }
+            applicationHome = (dir.getName().equals("build") || dir.getName().equals("dist"))
+                    ? dir.getParent() : dir.getAbsolutePath();
+        }
+        return applicationHome;
     }
 
     private Utils() {

@@ -29,7 +29,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
 
     public static void main(String[] args) {
         List<String> names;
-        try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE, 10000)) {
+        try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 10000, 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE)) {
             names = getSerialPortNames(false);
             names.forEach((name) -> {
                 System.out.println(name);
@@ -51,28 +51,27 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
 
     private BufferedReader bufferedInStream;
 
-    public LocalSerialPortBuffered(String portName, boolean verbose, int baud, int length, StopBits stopBits, Parity parity, FlowControl flowControl, Integer timeout) {
-        super(portName, baud, length, stopBits, parity, flowControl, timeout);
-        this.verbose = verbose;
+    public LocalSerialPortBuffered(String portName, boolean verbose, Integer timeout, Integer baud, Integer dataLength, StopBits stopBits, Parity parity, FlowControl flowControl) throws IOException {
+         super(portName, verbose, timeout, baud, dataLength, stopBits, parity, flowControl);
     }
 
-    public LocalSerialPortBuffered(String portName, boolean verbose, int baud, Integer timeout) {
-        this(portName, verbose, baud, DEFAULT_DATABITS, DEFAULT_STOPBITS, DEFAULT_PARITY, DEFAULT_FLOWCONTROL, timeout);
+    public LocalSerialPortBuffered(String portName, boolean verbose, Integer timeout, Integer baud) throws IOException {
+        this(portName, verbose, timeout, baud, null, null, null, null);
     }
 
-    public LocalSerialPortBuffered(String portName, boolean verbose, int baud) {
-        this(portName, verbose, baud, null);
+    public LocalSerialPortBuffered(String portName, boolean verbose, Integer timeout) throws IOException {
+        this(portName, verbose, timeout, null);
     }
 
-    public LocalSerialPortBuffered(String portName, int baudRate) {
-        this(portName, false, baudRate);
+    public LocalSerialPortBuffered(String portName, boolean verbose) throws IOException {
+        this(portName, verbose, null);
     }
 
-    public LocalSerialPortBuffered(String portName) {
-        this(portName, DEFAULT_BAUD);
+    public LocalSerialPortBuffered(String portName) throws IOException {
+        this(portName, false);
     }
 
-    public LocalSerialPortBuffered(int portNumber) throws NonExistingPortException {
+    public LocalSerialPortBuffered(Integer portNumber) throws NonExistingPortException, IOException {
         this(getSerialPortName(portNumber));
     }
 

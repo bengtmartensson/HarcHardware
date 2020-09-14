@@ -35,7 +35,9 @@ public class CommandReceive extends CommandCapture {
 
     private static final Logger logger = Logger.getLogger(CommandReceive.class.getName());
 
-    @Parameter(names = {"-f", "--frequency"}, description = "A priori frequency for received signal.")
+    // Should there be a --count?
+
+    @Parameter(names = {"-f", "--frequency"}, description = "Overriding frequency for received signal.")
     private Double frequency = ModulatedIrSequence.DEFAULT_FREQUENCY;
 
     @Override
@@ -44,9 +46,10 @@ public class CommandReceive extends CommandCapture {
     }
 
     @Override
-    public ModulatedIrSequence collect(IHarcHardware hardware) throws HarcHardwareException, OddSequenceLengthException, IOException {
+    public ModulatedIrSequence collect(IHarcHardware hardware, CommandCommonOptions commandLineArgs) throws IOException, HarcHardwareException, OddSequenceLengthException {
         IReceive hw = (IReceive) hardware;
+        commandLineArgs.setupTimeouts(hw);
         IrSequence irSequence = hw.receive();
-        return new ModulatedIrSequence(irSequence, frequency);
+        return irSequence != null ? new ModulatedIrSequence(irSequence, frequency) : null;
     }
 }

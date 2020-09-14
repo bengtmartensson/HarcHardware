@@ -28,6 +28,7 @@ import org.harctoolbox.cmdline.UsageException;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Version;
+import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.irp.IrpDatabase;
 import org.harctoolbox.irp.IrpParseException;
 import org.harctoolbox.irp.UnknownProtocolException;
@@ -53,6 +54,7 @@ public class CommandVersion extends AbstractCommand {
         if (shortForm || commandLineArgs.quiet)
             out.println(Version.version);
         else {
+            out.println("Serial: " + LocalSerialPort.getSoftwareVersion());
             IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
             out.println(Version.versionString);
             out.println("Database: " + (commandLineArgs.configFiles != null ? commandLineArgs.configFiles : "")
@@ -66,6 +68,8 @@ public class CommandVersion extends AbstractCommand {
 
     public void version(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws IOException, HarcHardwareException {
         String version = hardware.getVersion();
+        if (!commandLineArgs.quiet)
+            out.print("Version of " + commandLineArgs.className + ": ");
         out.println(version);
     }
 

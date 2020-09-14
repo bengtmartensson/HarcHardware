@@ -35,14 +35,9 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
     private final static String sendFlashedCommandAck = "**00018 RESULT OK";
 
     public static String makeUrl(String hostname, String remote, String command, Led led) {
-        return "http://" + (hostname != null ? hostname : defaultIrTransIP)
+        return "http://" + expandIP(hostname)
                 + "/send.htm?remote=" + remote + "&command=" + command + "&led=" + Led.ledChar(led);
     }
-
-    //@Override
-    //public boolean stopIr(String remote, String command, Transmitter transmitter) {
-    //    return stopIr(transmitter);
-    //}
 
     private static void usage(int exitstatus) {
         System.err.println("Usage:");
@@ -57,7 +52,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
 
     public static void main(String args[]) {
         boolean verbose = false;
-        String IrTransHost = defaultIrTransIP;
+        String IrTransHost = DEFAULT_IP;
         String configfilename = "listen.xml";
 
         int optarg = 0;
@@ -139,7 +134,6 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
         if (verbose)
             System.err.println("Sending command `" + str + "0' to IrTrans");
 
-        //Socket sock = new Socket(InetAddress.getByName(irTransIP), portNumber);
         Socket sock = new Socket();
         sock.connect(new InetSocketAddress(inetAddress, portNumber), timeout);
         PrintStream outToServer = new PrintStream(sock.getOutputStream(), false, "US-ASCII");

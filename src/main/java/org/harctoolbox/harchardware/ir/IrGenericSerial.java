@@ -35,10 +35,10 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
     private String lineEnding;
     private boolean raw;
 
-    public IrGenericSerial(String portName, int baudRate, int dataSize, int stopBits, LocalSerialPort.Parity parity,
-            LocalSerialPort.FlowControl flowControl, int timeout, boolean verbose)
+    public IrGenericSerial(String portName, boolean verbose, Integer timeout, Integer baudRate, Integer dataSize,
+            LocalSerialPort.StopBits stopBits, LocalSerialPort.Parity parity, LocalSerialPort.FlowControl flowControl)
             throws IOException {
-        super(LocalSerialPortBuffered.class, portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
+        super(LocalSerialPortBuffered.class, portName, verbose, timeout, baudRate, dataSize, stopBits, parity, flowControl);
     }
 
     /**
