@@ -25,9 +25,9 @@ import org.harctoolbox.harchardware.IHarcHardware;
  */
 public interface IIrReader extends IHarcHardware {
 
-    public static final int defaultBeginTimeout = 5000;
-    public static final int defaultCaptureMaxSize = 500;
-    public static final int defaultEndingTimeout = 100;
+    public static final int DEFAULT_BEGIN_TIMEOUT = 10000;
+    public static final int DEFAULT_CAPTURE_MAXSIZE = 500;
+    public static final int DEFAULT_ENDING_TIMEOUT = 100;
 
     public void setBeginTimeout(int integer) throws IOException;
 

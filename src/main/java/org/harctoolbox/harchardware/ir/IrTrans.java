@@ -35,6 +35,7 @@ import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.harchardware.Utils;
 import org.harctoolbox.harchardware.comm.IWeb;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.Pronto;
@@ -44,7 +45,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
 
     private static final Logger logger = Logger.getLogger(IrTrans.class.getName());
 
-    public final static String defaultIrTransIP = "192.168.0.32";
+    public static final String DEFAULT_IP = "192.168.0.32";
     protected final static int dummyDelay = 10; // milliseconds
     protected final static int defaultTimeout = 2000;
     /** port number, not possible to change. */
@@ -62,7 +63,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
 
     public static void main(String args[]) {
         boolean verbose = false;
-        String IrTransHost = defaultIrTransIP;
+        String IrTransHost = DEFAULT_IP;
 
         int optarg = 0;
         if (args.length > optarg && args[optarg].equals("-v")) {
@@ -88,6 +89,10 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
             System.err.println(ex.getMessage());
             usage(IrpUtils.EXIT_USAGE_ERROR);
         }
+    }
+
+    public static String expandIP(String ip) {
+        return ip == null || ip.equals(Utils.DEFAULT) ? DEFAULT_IP : ip;
     }
 
     protected int timeout;

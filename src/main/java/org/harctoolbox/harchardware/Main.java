@@ -17,9 +17,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.harctoolbox.cmdline.CmdLineProgram;
@@ -33,6 +33,8 @@ import org.harctoolbox.harchardware.cmdline.CommandGetRemotes;
 import org.harctoolbox.harchardware.cmdline.CommandReceive;
 import org.harctoolbox.harchardware.cmdline.CommandTransmit;
 import org.harctoolbox.harchardware.cmdline.CommandVersion;
+import org.harctoolbox.harchardware.comm.LocalSerialPort;
+import org.harctoolbox.harchardware.comm.NonExistingPortException;
 import org.harctoolbox.harchardware.ir.NoSuchTransmitterException;
 import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.irp.IrpException;
@@ -65,6 +67,7 @@ public final class Main extends CmdLineProgram {
     private final CommandGetRemotes commandGetRemotes = new CommandGetRemotes();
     private final CommandGetCommands commandGetCommands = new CommandGetCommands();
     private final CommandVersion commandVersion = new CommandVersion();
+    private File libDir;
 
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public Main() {
@@ -83,25 +86,53 @@ public final class Main extends CmdLineProgram {
     }
 
     @Override
+    public void extraSetup() {
+        String appHome = commandLineArgs.getAppHome(Main.class);
+        logger.log(Level.FINE, "appHome = {0}", appHome);
+        libDir = Utils.libraryDir(appHome);
+        logger.log(Level.FINE, "libDir = {0}", libDir);
+    }
+
+    @Override
     public ProgramExitStatus processCommand() {
         try {
-            LircHardware.loadLibrary(); // FIXME
-        } catch (UnsatisfiedLinkError ex) {
-            logger.log(Level.INFO, "Library DevSlashLirc could not be loaded");
+            commandLineArgs.initialize();
+        } catch (UsageException ex) {
+            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_USAGE_ERROR, ex.getLocalizedMessage());
         }
 
-        try (IHarcHardware hardware = commandLineArgs.hardware()) {
+        try {
+            LircHardware.loadLibrary(libDir); // Loads even if not needed :-(
+            logger.log(Level.FINE, "Loading libdevslashlirc from {0} succeeded", libDir);
+        } catch (UnsatisfiedLinkError ex) {
+            // For now
+            logger.log(Level.WARNING, "Loading libdevslashlirc from {0} FAILED!", libDir);
+        }
+        try {
+            LocalSerialPort.setLibraryDir(libDir);
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        try (IHarcHardware hardware = commandLineArgs.setupHardware()) {
+
+            boolean done = commandLineArgs.listSerialDevices(out);
+            if (done)
+                return new ProgramExitStatus();
+
             if (hardware != null)
                 hardware.open();
+
+            boolean success = true;
             switch (command) {
                 case "transmit":
-                    commandTransmit.transmit(out, commandLineArgs, hardware);
+                    success = commandTransmit.transmit(out, commandLineArgs, hardware);
                     break;
                 case "capture":
-                    commandCapture.collect(out, commandLineArgs, hardware);
+                    success = commandCapture.collect(out, commandLineArgs, hardware);
                     break;
                 case "receive":
-                    commandReceive.collect(out, commandLineArgs, hardware);
+                    success = commandReceive.collect(out, commandLineArgs, hardware);
                     break;
                 case "remotes":
                     commandGetRemotes.getRemotes(out, commandLineArgs, hardware);
@@ -113,16 +144,16 @@ public final class Main extends CmdLineProgram {
                     commandHelp.help(out, new CommandCommonOptions(), argumentParser, Version.documentationUrl);
                     break;
                 case "version":
-                    if (commandLineArgs.hasClass()) {
+                    if (commandLineArgs.hasClass())
                         commandVersion.version(out, commandLineArgs, hardware);
-                    } else {
+                    else
                         commandVersion.version(out, commandLineArgs);
-                    }
+
                     break;
                 default:
                     return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_USAGE_ERROR, "Unknown command: " + command);
             }
-            return new ProgramExitStatus();
+            return new ProgramExitStatus(Version.appName, success ? ProgramExitStatus.EXIT_SUCCESS : ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, "Operation failed.");
         } catch (ClassCastException ex) {
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_USAGE_ERROR, "Class " + commandLineArgs.className
                     + " does not implement the requested functionallity for command \"" + command + "\".");
@@ -131,11 +162,14 @@ public final class Main extends CmdLineProgram {
             ex.printStackTrace();
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
         } catch (NoSuchTransmitterException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
+        } catch (NonExistingPortException ex) {
+            logger.log(Level.SEVERE, "No such port: {0}", ex.getMessage());
+            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_IO_ERROR, "No such port: " + ex.getLocalizedMessage());
         } catch (HarcHardwareException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
+            logger.log(Level.SEVERE, ex.getLocalizedMessage());
+            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, "Error when setting up hardware: " + ex.getLocalizedMessage());
         } catch (UsageException | UnknownProtocolException ex) {
             // Exceptions likely from silly user input, just print the exception
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_USAGE_ERROR, ex.getLocalizedMessage());
@@ -144,18 +178,22 @@ public final class Main extends CmdLineProgram {
             if (commandLineArgs.logLevel.intValue() < Level.INFO.intValue())
                 ex.printStackTrace();
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_USAGE_ERROR, "Parse error in \"" + ex.getText() + "\": " + ex.getLocalizedMessage());
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+        } catch (ClassNotFoundException ex) {
+            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, "Class " + ex.getMessage() + " not found.");
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException ex) {
             ex.printStackTrace();
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
         } catch (InvalidArgumentException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
         } catch (IrpException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_FATAL_PROGRAM_FAILURE, ex.getLocalizedMessage());
         } catch (SAXException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_XML_ERROR, ex.getLocalizedMessage());
+        } catch (UnsatisfiedLinkError ex) {
+            return new ProgramExitStatus(Version.appName, ProgramExitStatus.EXIT_DYNAMICLINK_ERROR, ex.getLocalizedMessage());
         }
     }
 }

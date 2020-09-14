@@ -20,6 +20,7 @@ package org.harctoolbox.harchardware.cmdline;
 import com.beust.jcommander.Parameters;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.logging.Logger;
 import org.harctoolbox.cmdline.AbstractCommand;
 import org.harctoolbox.cmdline.UsageException;
 import org.harctoolbox.harchardware.IHarcHardware;
@@ -30,7 +31,7 @@ import org.harctoolbox.harchardware.ir.IRemoteCommandIrSender;
 @Parameters(commandNames = {"remotes"}, commandDescription = "Get the name of the contained remotes.")
 public class CommandGetRemotes extends AbstractCommand {
 
-    //private static final Logger logger = Logger.getLogger(CommandTransmit.class.getName());
+    private static final Logger logger = Logger.getLogger(CommandTransmit.class.getName());
 
     @Override
     public String description() {
@@ -38,7 +39,7 @@ public class CommandGetRemotes extends AbstractCommand {
     }
 
     public void getRemotes(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws IOException, UsageException {
-        commandLineArgs.assertClass();
+        commandLineArgs.assertNonNullClass();
         String[] remotes = ((IRemoteCommandIrSender) hardware).getRemotes();
         for (String remote : remotes)
             out.println(remote);

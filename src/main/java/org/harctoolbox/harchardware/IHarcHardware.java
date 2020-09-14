@@ -55,7 +55,7 @@ public interface IHarcHardware extends Closeable {
     public void setTimeout(int timeout) throws IOException;
 
     /**
-     * Tries to identify instances that are not valid. Exact meaning can vary.
+     * Checks validity of an instance. Exact meaning can vary.
      * @return validity of the instance.
      */
     public boolean isValid();

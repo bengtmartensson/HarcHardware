@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.Objects;
 import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
@@ -78,47 +78,16 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
 
     private static final int TICK = 25; // micro seconds
 
-    public static final String DEFAULTPORTNAME = "/dev/ttyUSB0";
+    public static final String DEFAULTPORTNAME = "ftdi";///dev/ttyUSB0";
     public static final int DEFAULTBAUDRATE = 115200;
+    public static final int DEFAULT_TIMEOUT = 10000;
     private static final int DATASIZE = 8;
-    private static final int STOPBITS = 1;
+    private static final LocalSerialPort.StopBits STOPBITS = LocalSerialPort.StopBits.ONE;
     private static final LocalSerialPort.Parity PARITY = LocalSerialPort.Parity.NONE;
     private static final LocalSerialPort.FlowControl DEFAULTFLOWCONTROL = LocalSerialPort.FlowControl.NONE;
 
-    /**
-     * Demos sending and receiving.
-     * @param args Pronto hex of signal to send, or empty for receiving.
-     */
-    public static void main(String[] args) {
-        String portName = DEFAULTPORTNAME;
-        boolean verbose = true;
-        try (CommandFusion commandFusion = new CommandFusion(portName, verbose)) {
-            commandFusion.open();
-            System.out.println("Version: " + commandFusion.getVersion());
-            if (args.length > 0) {
-                IrSignal irSignal = Pronto.parse(args);
-                boolean success = commandFusion.sendIr(irSignal, 1, null);
-                System.out.println(success ? "Sending succeeded" : "Sending failed");
-            } else {
-                System.out.println("Send an IR signal to the CF!");
-                ModulatedIrSequence seq = commandFusion.capture();
-                if (seq == null) {
-                    System.err.println("No input");
-                } else {
-                    System.out.println(seq);
-                    //DecodeIR.invoke(seq);
-                }
-            }
-        } catch (InvalidArgumentException | Pronto.NonProntoFormatException | IOException | HarcHardwareException ex) {
-            ex.printStackTrace();
-            System.exit(1);
-        }
-        System.exit(0);
-    }
-
     private static byte[] encode(IrSignal irSignal, int count) {
-        if (irSignal == null)
-            throw new NullPointerException("irSignal cannot be null");
+        Objects.requireNonNull(irSignal, "irSignal cannot be null");
         String data = "P0" + Integer.toString(PORTID) + ":RAW:" + Pronto.toString(irSignal.toOneShot(count));
         return encode(SENDCOMMAND, data);
     }
@@ -131,6 +100,8 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     // 2-4 = IRL (signifying we are communicating with an IR Learner)
     // 5-7 = The command name. See below for available commands.
     private static Payload decode(byte[] data, Byte token) {
+        if (data == null)
+            return null;
         int index = 0;
         for (int i = 0; i < INTROBYTES.length; i++) {
             if (data[i] != INTROBYTES[i])
@@ -191,30 +162,24 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     private String versionString = null;
 
     public CommandFusion() throws IOException {
-        this(DEFAULTPORTNAME, DEFAULTBAUDRATE, false);
+        this(DEFAULTPORTNAME);
     }
 
     public CommandFusion(String portName) throws IOException {
-        this(portName, DEFAULTBAUDRATE, false);
+        this(portName, false);
     }
 
     public CommandFusion(String portName, boolean verbose) throws IOException {
-        this(portName, DEFAULTBAUDRATE, verbose);
+        this(portName, verbose, null);
     }
 
     public CommandFusion(String portName, boolean verbose, Integer timeout) throws IOException {
-        this(portName, DEFAULTBAUDRATE, verbose);
-        if (timeout != null)
-            logger.log(Level.WARNING, "Timeout given, but ignored");
-    }
-
-    public CommandFusion(String portName, int baudRate, boolean verbose) throws IOException {
-        super(LocalSerialPortRaw.class, portName, baudRate, DATASIZE, STOPBITS, PARITY, DEFAULTFLOWCONTROL, -1/*beginTimeout*/, verbose);
+        super(LocalSerialPortRaw.class, LocalSerialPort.canonicalizePortName(portName, DEFAULTPORTNAME), verbose, DEFAULT_TIMEOUT, DEFAULTBAUDRATE, DATASIZE, STOPBITS, PARITY, DEFAULTFLOWCONTROL);
     }
 
     // Necessary for the HardwareManager. Do not "clean up".
-    public CommandFusion(String portName, int baudRate, int timeoutNotUsed, boolean verbose) throws IOException {
-        this(portName, baudRate, verbose);
+    public CommandFusion(String portName, boolean verbose, Integer timeoutNotUsed, Integer baudRate) throws IOException {
+        this(portName, verbose, baudRate);
     }
 
     /**
@@ -251,9 +216,9 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         }
     }
 
-    // Untested
     /**
      * Sends an IR signal from the <a href="http://www.commandfusion.com/irdatabase">built-in, proprietary data base</a>.
+     * Not tested.
      *
      * @param deviceType
      * @param codeset

@@ -1,9 +1,11 @@
 #!/bin/sh
 # Ad hoc wrapper, for development
 
+PROJECT=HarcHardware
 JAVA=java
-LIBRARY_PATH=/usr/local/share/irscrutinizer/Linux-amd64
 HOME="$(dirname -- "$(readlink -f -- "${0}")" )"
-JAR=`ls ${HOME}/target/HarcHardware-*-jar-with-dependencies.jar`
+VERSION=$(xsltproc ${HOME}/common/xslt/extract_project_version.xsl ${HOME}/pom.xml)
+JAR=${HOME}/target/${PROJECT}-${VERSION}-jar-with-dependencies.jar
+MAIN="${JAVA} -jar ${JAR}"
 
-exec "${JAVA}" -Djava.library.path=${LIBRARY_PATH} -jar "${JAR}" "$@"
+exec ${MAIN} "$@"

@@ -52,6 +52,9 @@ public class CommandCapture extends AbstractCommand {
     private static final Logger logger = Logger.getLogger(CommandCapture.class.getName());
     private static final int radix = 10;
 
+    @Parameter(names = {"-a", "--analyze"}, description = "Send the received signal into the analyzer.")
+    private boolean analyze = false;
+
     @Parameter(names = {"-#", "--count"}, description = "Capture this many signals before exiting.")
     private Integer count = null;
 
@@ -61,9 +64,6 @@ public class CommandCapture extends AbstractCommand {
     @Parameter(names = {"-d", "--decode"}, description = "Attempt to decode the signal received.")
     private boolean decode = false;
 
-    @Parameter(names = {"-a", "--analyze"}, description = "Send the received signal into the analyzer.")
-    private boolean analyze = false;
-
     @Parameter(names = {"-p", "--pronto"}, description = "Output signal as Pronto Hex.")
     private boolean pronto = false;
 
@@ -72,26 +72,37 @@ public class CommandCapture extends AbstractCommand {
 
     @Parameter(names = {"-R", "--repeatfinder"}, description = "Invoke the repeatfinder on the captured signal.")
     private boolean repeatFinder = false;
-    private Double capturedFrequency;
+    private Decoder decoder = null;
 
     @Override
     public String description() {
         return "This command captures a command from the selected hardware, using a non-demodulating sensor.";
     }
 
-    public void collect(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, HarcHardwareException, InvalidArgumentException, IOException, IrpParseException, UnknownProtocolException, SAXException {
-        commandLineArgs.assertClass();
-
-
-        if (count != null)
-            throw new UsageException("--count not implemented yet");
+    public boolean collect(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, HarcHardwareException, InvalidArgumentException, IOException, IrpParseException, UnknownProtocolException, SAXException {
+        commandLineArgs.assertNonNullClass();
         if (! (pronto || raw || decode || analyze)) {
             logger.warning("No output format selected, forcing Pronto Hex");
             pronto = true;
         }
 
-        ICapture hw = (ICapture) hardware;
-        ModulatedIrSequence irSequence = collect(hardware);
+        boolean success = true;
+        for (int i = 0; i < (count == null ? 1 : count); i++) {
+            boolean succ = collectOne(out, commandLineArgs, hardware);
+            success = success && succ;
+        }
+        return success;
+    }
+
+    private boolean collectOne(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws HarcHardwareException, IOException, UsageException, SAXException, InvalidArgumentException, IrpParseException, UnknownProtocolException {
+        if (!commandLineArgs.quiet)
+            out.println("Now send a signal to the selected capturing device.");
+
+        ModulatedIrSequence irSequence = collect(hardware, commandLineArgs);
+        if (irSequence == null || irSequence.isEmpty()) {
+            out.println("No signal received.");
+            return false;
+        }
 
         if (clean)
             irSequence = Cleaner.clean(irSequence);
@@ -105,8 +116,10 @@ public class CommandCapture extends AbstractCommand {
             out.println(irSignal.toString(true));
 
         if (decode) {
-            IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
-            Decoder decoder = new Decoder(irpDatabase);
+            if (decoder == null) {
+                IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
+                decoder = new Decoder(irpDatabase);
+            }
             Decoder.DecoderParameters parameters = commandLineArgs.decoderParameters();
             if (repeatFinder) {
                 Decoder.SimpleDecodesSet decodes = decoder.decodeIrSignal(irSignal, parameters);
@@ -117,8 +130,7 @@ public class CommandCapture extends AbstractCommand {
             } else {
                 Decoder.DecodeTree decodes = decoder.decode(irSequence, parameters);
                 for (Decoder.TrunkDecodeTree dec : decodes)
-                    out.println(decode);
-                out.println(decodes);
+                    out.println(dec);
                 if (decodes.isEmpty() && !commandLineArgs.quiet)
                     out.println("No decodes.");
             }
@@ -136,10 +148,12 @@ public class CommandCapture extends AbstractCommand {
                 throw new ThisCannotHappenException();
             }
          }
+        return true;
     }
 
-    public ModulatedIrSequence collect(IHarcHardware hardware) throws HarcHardwareException, IOException, InvalidArgumentException {
+    public ModulatedIrSequence collect(IHarcHardware hardware, CommandCommonOptions commandLineArgs) throws HarcHardwareException, IOException, InvalidArgumentException {
         ICapture hw = (ICapture) hardware;
+        commandLineArgs.setupTimeouts(hw);
         return hw.capture();
     }
 }

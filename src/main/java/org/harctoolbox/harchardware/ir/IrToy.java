@@ -43,7 +43,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     public static final LocalSerialPort.FlowControl defaultFlowControl = LocalSerialPort.FlowControl.RTSCTS;
 
     private static final int dataSize = 8;
-    private static final int stopBits = 1;
+    private static final LocalSerialPort.StopBits stopBits = LocalSerialPort.StopBits.ONE;
     private static final LocalSerialPort.Parity parity = LocalSerialPort.Parity.NONE;
 
     private static final double oscillatorFrequency = 48000000;
@@ -99,49 +99,10 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     private final static int receivePin = 3;
     private final static int sendingPin = 4;
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        String portName = "/dev/ttyACM0";
-        IrToy toy = null;
-        try {
-            toy = new IrToy(portName);
-            toy.open();
-            if (args.length >= 1 && args[0].equals("-b"))
-                toy.bootloaderMode();
-            else {
-//                //int[] data = new int[]{889, 889, 1778, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 90886};
-//                System.out.println(toy.getVersion());
-//                //String result = toy.selftest();
-//                //System.out.println(result);
-//                toy.setLed(true);
-//                toy.setLedMute(false);
-//                IrSignal signal = new IrSignal("../IrpMaster/data/IrpProtocols.ini", "nec1", "D=122 F=26");
-//                boolean success = toy.sendIr(signal, 10, null);
-//                //String success = toy.selftest();
-//                toy.setPin(powerPin, true);
-//                toy.setPin(receivePin, true);
-//                toy.setPin(sendingPin, true);
-//
-//                System.out.println(success);
-            }
-        } catch (HarcHardwareException | IOException ex) {
-            System.err.println(ex.getMessage());
-        } finally {
-            if (toy != null) {
-                try {
-                    toy.close();
-                } catch (IOException ex) {
-                }
-            }
-        }
-    }
-
     private boolean stopCaptureRequest = true;
     private String protocolVersion;
     private String version;
-    private int captureMaxSize = defaultCaptureMaxSize;
+    private int captureMaxSize = DEFAULT_CAPTURE_MAXSIZE;
     private int IOdirections = -1;
     private int IOdata = 0;
     private boolean useSignalingLed;
@@ -159,24 +120,16 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     }
 
     public IrToy(String portName, boolean verbose, Integer timeout) throws IOException {
-        this(portName, verbose, timeout != null ? timeout : defaultBeginTimeout, defaultBaudRate);
+        this(portName, verbose, timeout, defaultBaudRate);
     }
 
-    public IrToy(String portName, boolean verbose, Integer timeout, int baudRate) throws IOException {
-        this(portName, verbose, timeout, baudRate, defaultCaptureMaxSize, defaultFlowControl);
+    public IrToy(String portName, boolean verbose, Integer timeout, Integer baudRate) throws IOException {
+        this(portName, verbose, timeout, baudRate, DEFAULT_CAPTURE_MAXSIZE, defaultFlowControl);
     }
 
-//    public IrToy(String portName, boolean verbose, int beginTimeout, int captureMaxSize, int endingTimeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-//        this(portName, defaultBaudRate, defaultFlowControl, beginTimeout, captureMaxSize, verbose);
-//    }
-
-//    public IrToy(String portName, int baud, int beginTimeout, int captureSize, int endingTimeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-//        this(portName, baud, defaultFlowControl, beginTimeout, captureSize, verbose);
-//    }
-
-    public IrToy(String portName, boolean verbose, Integer timeout, int baudRate, int maxLearnLength, LocalSerialPort.FlowControl flowControl)
+    public IrToy(String portName, boolean verbose, Integer timeout, Integer baudRate, Integer maxLearnLength, LocalSerialPort.FlowControl flowControl)
             throws IOException {
-        super(LocalSerialPortRaw.class, portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
+        super(LocalSerialPortRaw.class, LocalSerialPort.canonicalizePortName(portName, defaultPortName), verbose, timeout, baudRate, dataSize, stopBits, parity, flowControl);
         this.captureMaxSize = maxLearnLength;
     }
 

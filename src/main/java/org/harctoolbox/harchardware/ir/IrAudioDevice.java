@@ -26,9 +26,15 @@ import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.ModulatedIrSequence;
 
 /**
- * This class does something interesting and useful. Or not...
+ * This class implements IR sending using the Java audio device.
+ * It is essentially a wrapper around the {@link Wave} class.
  */
 public class IrAudioDevice implements IHarcHardware, IRawIrSender {
+
+    public static final int DEFAULT_SAMPLE_FREQUENCY = 48000;
+    public static final int DEFAULT_SAMPLE_SIZE = 8;
+    public static final int DEFAULT_CHANNELS = 1;
+
     private int sampleFrequency;
     private int sampleSize;
     private int channels;
@@ -40,15 +46,20 @@ public class IrAudioDevice implements IHarcHardware, IRawIrSender {
     private boolean verbose;
 
     /**
+     * Generic constructor.
      *
-     * @param sampleFrequency
-     * @param sampleSize
-     * @param channels
-     * @param bigEndian
-     * @param omitTail
-     * @param square
-     * @param divide
-     * @param verbose
+     * @param sampleFrequency Frequency for the audio device, do not confuse
+     * with the IR modulation frequency.
+     * @param sampleSize Size in bits of generated samples. Normally 8.
+     * @param channels 1 for mono (normal case), 2 for "stereo" (left and right
+     * in anti-phase).
+     * @param bigEndian For sampleSize &gt; 8, generate samples in big endian
+     * format.
+     * @param omitTail Omit the final silence.
+     * @param square Generate square vave on output, otherwise sine.
+     * @param divide Normally true, assuming the frequency will be effectively
+     * doubled by the use of anti-parallel LEDs on the output.
+     * @param verbose Verbose operation.
      */
     public IrAudioDevice(int sampleFrequency, int sampleSize, int channels, boolean bigEndian,
             boolean omitTail, boolean square, boolean divide, boolean verbose) {
@@ -63,26 +74,35 @@ public class IrAudioDevice implements IHarcHardware, IRawIrSender {
     }
 
     /**
+     * Convenience constructor, defaulting some parameters.
      *
-     * @param sampleFrequency
-     * @param channels
-     * @param omitTail
-     * @param verbose
-     */
-    public IrAudioDevice(int sampleFrequency, int channels, boolean omitTail, boolean verbose) {
-        this(sampleFrequency, 8, channels, false, omitTail, true, true, verbose);
-    }
-
-    /**
-     *
-     * @param sampleFrequency
-     * @param sampleSize
-     * @param channels
-     * @param omitTail
-     * @param verbose
+     * @param sampleFrequency Frequency for the audio device, do not confuse
+     * with the IR modulation frequency.
+     * @param sampleSize Size in bits of generated samples. Normally 8.
+     * @param channels 1 for mono (normal case), 2 for "stereo" (left and right
+     * in anti-phase).
+     * @param omitTail Omit the final silence.
+     * @param verbose Verbose operation.
      */
     public IrAudioDevice(int sampleFrequency, int sampleSize, int channels, boolean omitTail, boolean verbose) {
         this(sampleFrequency, sampleSize, channels, false, omitTail, true, true, verbose);
+    }
+
+    /**
+     * Constructor for usage in HarcHardware.Main.
+     *
+     * @param timeout ignored
+     * @param verbose Verbose operation.
+     */
+    public IrAudioDevice(boolean verbose, Integer timeout) {
+        this(DEFAULT_SAMPLE_FREQUENCY, DEFAULT_SAMPLE_SIZE, DEFAULT_CHANNELS, false, false, true, true, verbose);
+    }
+
+    /**
+     * Convenience constructor, defaulting all parameters.
+     */
+    public IrAudioDevice() {
+        this(DEFAULT_SAMPLE_FREQUENCY, DEFAULT_SAMPLE_SIZE, DEFAULT_CHANNELS, false, false, true, true, false);
     }
 
     @Override

@@ -53,6 +53,9 @@ public class IrWidget implements IHarcHardware, ICapture {
     private static final int mask = 0x3F;
     private static final int shortDelay = 20;
     private static final int longDelay = 200;
+    private static final int defaultBeginTimeout = 5000;
+    private static final int defaultCaptureMaxSize = 500;
+    private static final int defaultEndingTimeout = 100;
 
     // I hate this "nobody needs or understands unsigned" by Gosling...
     private static int toIntAsUnsigned(byte b) {

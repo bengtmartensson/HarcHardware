@@ -71,7 +71,7 @@ public class SonySerialCommand {
             }
         } else {
             try {
-                port = new LocalSerialPortRaw("/dev/ttyS0", 38400, 8, LocalSerialPort.StopBits.ONE, LocalSerialPort.Parity.EVEN, LocalSerialPort.FlowControl.NONE, 2000, true);
+                port = new LocalSerialPortRaw("/dev/ttyS0", true, 2000, 38400, 8, LocalSerialPort.StopBits.ONE, LocalSerialPort.Parity.EVEN, LocalSerialPort.FlowControl.NONE);
                 ((IHarcHardware) port).open();
             } catch (HarcHardwareException | IOException ex) {
                 System.err.println(ex.getMessage());

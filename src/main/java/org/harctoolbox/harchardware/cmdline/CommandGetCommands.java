@@ -43,7 +43,7 @@ public class CommandGetCommands extends AbstractCommand {
     }
 
     public void getCommands(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, IOException {
-        commandLineArgs.assertClass();
+        commandLineArgs.assertNonNullClass();
         String[] commands = ((IRemoteCommandIrSender) hardware).getCommands(remote);
         if (commands == null)
             throw new UsageException("No such remote \"" + remote + "\"");
