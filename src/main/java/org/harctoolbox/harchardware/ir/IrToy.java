@@ -38,8 +38,9 @@ import org.harctoolbox.ircore.Pronto;
  */
 public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrSender, ICapture, IReceive {
 
+    public static final boolean useDebuggingLeds = false; // For best performance, do not use debugging LEDs.
     public static final String defaultPortName = "/dev/ttyACM0";
-    public static final int defaultBaudRate = 9600;
+    public static final int defaultBaudRate = 115200;
     public static final LocalSerialPort.FlowControl defaultFlowControl = LocalSerialPort.FlowControl.RTSCTS;
 
     private static final int dataSize = 8;
@@ -216,7 +217,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             // Just does not work, see http://dangerousprototypes.com/forum/viewtopic.php?f=29&t=4024&start=23
             throw new HarcHardwareException("Unsupported firmware: " + version);
 
-        useSignalingLed = swMinorVersion >= 2;
+        useSignalingLed = useDebuggingLeds && (swMinorVersion >= 2);
     }
 
     @Override
