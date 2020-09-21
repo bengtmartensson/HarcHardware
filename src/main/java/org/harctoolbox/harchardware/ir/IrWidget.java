@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2013, 2014 Bengt Martensson.
+Copyright (C) 2013, 2014, 2020 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
@@ -26,69 +25,48 @@ import gnu.io.SerialPort;
 import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
+import org.harctoolbox.harchardware.comm.LocalSerialPort;
+import org.harctoolbox.harchardware.comm.NonExistingPortException;
 import org.harctoolbox.ircore.IrCoreUtils;
 import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.OddSequenceLengthException;
+import org.harctoolbox.ircore.ThisCannotHappenException;
 
 /**
  * This class implements support for Kevin Timmerman's Ir Widget.
- * It uses the RXTX library, which encapsulates all system dependencies.
+ * It uses the NRJavaSerial library, which encapsulates all system dependencies.
  * Although it duplicates some functionality found in Kevin's program IrScope (file widget.cpp),
  * it is not derived.
  *
  * <a href="http://www.compendiumarcana.com/irwidget/">Original web page</a>.
  */
 
-// Presently, only the "irwidgetPulse" (case 0 in widget.cpp) is to be considered as implemented and tested.
+// Only the "irwidgetPulse" (case 0 in widget.cpp) is implemented.
 public class IrWidget implements IHarcHardware, ICapture {
 
-    /** Number of micro seconds in a count. */
-    public static final int MICROS_IN_TICK = 100;
-    public static final String defaultPortName = "/dev/ttyUSB0";
+    private static final Logger logger = Logger.getLogger(IrWidget.class.getName());
 
-    private static final int baudRate = 115200;
-    private static final int mask = 0x3F;
-    private static final Modes defaultMode = Modes.irwidgetPulse;
-    private static final int shortDelay = 20;
-    private static final int longDelay = 200;
-    private static final int defaultBeginTimeout = 5000;
-    private static final int defaultCaptureMaxSize = 500;
-    private static final int defaultEndingTimeout = 100;
+    /** Number of micro seconds in a count. */
+    public static final int MICROS_PER_TICK = 100;
+    public static final String DEFAULT_PORTNAME = "/dev/ttyUSB0";
+    private static final int BAUDRATE = 115200;
+    private static final int MASK = 0x3F;
+    private static final int SHORT_DELAY = 20;
+    private static final int LONG_DELAY = 100; // was 100, 200 by Kevin
+    private static final int INVALID = -1;
+    private static final int EMERGENCY_TIMEOUT = 10000;
 
     // I hate this "nobody needs or understands unsigned" by Gosling...
     private static int toIntAsUnsigned(byte b) {
         return b >= 0 ? b : b + 256;
     }
 
-    /**
-     * For testing purposes only.
-     *
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        try (IrWidget w = new IrWidget()) {
-            w.open();
-            ModulatedIrSequence seq = w.capture();
-            System.out.println(seq);
-            if (seq == null) {
-                System.err.println("No input");
-            } else {
-//                DecodeIR.invoke(seq);
-            }
-        } catch (IOException ex) {
-            System.err.println("exception: " + ex.toString() + ex.getMessage());
-        } catch (HarcHardwareException ex) {
-            System.err.println(ex.getMessage());
-        }
-    }
-
-    private CommPortIdentifier portIdentifier;
-    private CommPort commPort;
-    private Modes mode;
-    private String portName;
+    private final CommPortIdentifier portIdentifier;
+    private RXTXPort serialPort;
     private int debug;
     private byte[] data;
     private int[] times;
@@ -103,12 +81,14 @@ public class IrWidget implements IHarcHardware, ICapture {
      /**
      * Constructs new IrWidget with default port name and timeouts.
      *
+     * @throws java.io.IOException
+     * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
-    public IrWidget() {
+    public IrWidget() throws IOException, NonExistingPortException {
         this(null, false, null);
     }
 
-    public IrWidget(String portName) {
+    public IrWidget(String portName) throws IOException, NonExistingPortException {
         this(portName, false, null);
     }
 
@@ -118,40 +98,36 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
      * @param verbose
      * @param timeout
+     * @throws java.io.IOException
+     * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
-    public IrWidget(String portName, boolean verbose, Integer timeout) {
+    public IrWidget(String portName, boolean verbose, Integer timeout) throws IOException, NonExistingPortException {
         this(portName, verbose, timeout, null, null);
     }
 
     /**
      * Constructs new IrWidget.
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
+     * @param beginTimeout
+     * @param captureMaxSize
      * @param verbose
-     * @param startTimeout
-     * @param runTimeout
      * @param endingTimeout
+     * @throws java.io.IOException
+     * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
-    public IrWidget(String portName, boolean verbose, Integer startTimeout, Integer runTimeout, Integer endingTimeout) {
-        this(portName, verbose, null, startTimeout, runTimeout, endingTimeout);
-    }
-
-    /**
-     * Constructs new IrWidget.
-     * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
-     * @param mode Hardware mode.
-     * @param verbose
-     * @param startTimeout
-     * @param runTimeout
-     * @param endingTimeout
-     */
-    private IrWidget(String portName, boolean verbose, Modes mode, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout) {
-        this.mode = mode != null ? mode : defaultMode;
-        this.portName = portName != null ? portName : defaultPortName;
+    public IrWidget(String portName, boolean verbose, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout) throws IOException, NonExistingPortException {
         this.debug = 0;
         this.verbose = verbose;
-        this.beginTimeout = beginTimeout != null ? beginTimeout : defaultBeginTimeout;
-        this.captureMaxSize = captureMaxSize != null ? captureMaxSize : defaultCaptureMaxSize;
-        this.endingTimeout = endingTimeout != null ? endingTimeout : defaultEndingTimeout;
+        this.beginTimeout = beginTimeout != null ? beginTimeout : DEFAULT_BEGIN_TIMEOUT;
+        this.captureMaxSize = captureMaxSize != null ? captureMaxSize : DEFAULT_CAPTURE_MAXSIZE;
+        this.endingTimeout = endingTimeout != null ? endingTimeout : DEFAULT_ENDING_TIMEOUT;
+        String realPortName = LocalSerialPort.canonicalizePortName(portName, DEFAULT_PORTNAME);
+        try {
+            portIdentifier = CommPortIdentifier.getPortIdentifier(realPortName);
+        } catch (NoSuchPortException ex) {
+            // Repack to prevent exporting the NRserial/RXTX-exceptions.
+            throw new NonExistingPortException(realPortName);
+        }
     }
 
     @Override
@@ -162,43 +138,50 @@ public class IrWidget implements IHarcHardware, ICapture {
     @Override
     public void open() throws HarcHardwareException, IOException {
         try {
-            portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
-        } catch (NoSuchPortException ex) {
-            throw new HarcHardwareException(ex);
-        }
-        try {
-            commPort = portIdentifier.open(getClass().getName(), 2000);
+           serialPort = portIdentifier.open(getClass().getName(), DEFAULT_BEGIN_TIMEOUT);
         } catch (PortInUseException ex) {
             throw new HarcHardwareException(ex);
         }
 
-        if (!(commPort instanceof gnu.io.SerialPort))
-            throw new RuntimeException("Internal error: " + portName + " not a serial port");
-        RXTXPort serialPort = (RXTXPort) commPort;
         try {
-            serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+            serialPort.setSerialPortParams(BAUDRATE, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
         } catch (UnsupportedCommOperationException ex) {
             throw new HarcHardwareException(ex);
         }
         serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
 
         serialPort.disableReceiveThreshold();
-        //serial.disableReceiveFraming();
-        //serialPort.enableReceiveTimeout(5000);
-        //serial.setLowLatency();
-        serialPort.disableReceiveFraming();
-        //serialPort.clearCommInput();
-        //setMode(mode);
-        //inputStream = commPort.getInputStream();
+        //serialPort.disableReceiveFraming();
+        //serialPort.enableReceiveThreshold(0);
+        serialPort.enableReceiveTimeout(beginTimeout);
     }
 
     @Override
-    public void close() {
-        portIdentifier = null;
-        //unsetMode();
-        if (commPort != null)
-            commPort.close();
-        commPort = null;
+    public void close() throws IOException {
+        disableIrWidgetMode();
+        if (serialPort != null)
+            serialPort.close();
+        serialPort = null;
+    }
+
+    private void enableIrWidgetMode() {
+        try {
+            serialPort.setDTR(false);
+            serialPort.setRTS(false);
+            Thread.sleep(SHORT_DELAY); // ???
+            serialPort.setDTR(true);
+            Thread.sleep(LONG_DELAY);
+            serialPort.setRTS(true);
+        } catch (InterruptedException ex) {
+            throw new ThisCannotHappenException(ex);
+        }
+    }
+
+    private void disableIrWidgetMode() {
+        if (serialPort != null) {
+            serialPort.setDTR(false);
+            serialPort.setRTS(false);
+        }
     }
 
     /**
@@ -232,50 +215,51 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @throws IOException
      */
     @Override
-    @SuppressWarnings("SleepWhileInLoop")
     public ModulatedIrSequence capture() throws IOException {
-        int bytesRead = 0;
-        ModulatedIrSequence seq = null;
-        RXTXPort serialPort = (RXTXPort) commPort;
-
-        setMode(mode);
+        enableIrWidgetMode();
+        InputStream inputStream = serialPort.getInputStream();
         try {
             serialPort.clearCommInput();
         } catch (UnsupportedCommOperationException ex) {
-            // This is bad...
-            throw new RuntimeException(ex);
+            throw new ThisCannotHappenException(ex);
         }
-        InputStream inputStream = serialPort.getInputStream();
-        int toRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / MICROS_IN_TICK);
-        data = new byte[toRead];
+        //serialPort.enableReceiveTimeout(beginTimeout);
 
-        byte last = -1;
-        long startTime = System.currentTimeMillis();
-        long lastEvent = startTime;
-        stopRequested = false;
-        while (bytesRead < toRead && !stopRequested) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException ex) {
+        try {
+            int maxToRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / MICROS_PER_TICK);
+            data = new byte[maxToRead];
+
+            int readByte = inputStream.read(); // blocks. If IOException we really have a problem, so don't catch it
+            if (readByte == INVALID) { // timeout
+                if (verbose)
+                    System.err.println("TIMEOUT");
+                return null;
             }
-            if (inputStream.available() == 0) {
-                if (bytesRead == 0) {
-                    if (beginTimeout > 0 && System.currentTimeMillis() - startTime >= beginTimeout)
+            data[0] = (byte) readByte;
+
+            byte last = (byte) INVALID;
+            long startTime = System.currentTimeMillis();
+            long lastEvent = startTime;
+            stopRequested = false;
+            int bytesRead = 1;
+
+            // Runs in spin-wait, but only when really capturing
+            while (bytesRead < maxToRead && !stopRequested) {
+                if (inputStream.available() == 0) {
+                    if (EMERGENCY_TIMEOUT > 0 && System.currentTimeMillis() - lastEvent >= EMERGENCY_TIMEOUT)
                         break;
-                } else {
-                    if (endingTimeout > 0 && System.currentTimeMillis() - lastEvent >= endingTimeout)
-                        break;
+
+                    continue;
                 }
-            } else {
-                int x = inputStream.read(data, bytesRead, toRead - bytesRead);
-                bytesRead += x;
+                int noRead = inputStream.read(data, bytesRead, maxToRead - bytesRead);
+                bytesRead += noRead;
                 int i = 0;
-                while (i < x && data[bytesRead - x + i] == last) {
+                while (i < noRead && data[bytesRead - noRead + i] == last) {
                     i++;
                 }
 
-                if (i == x) {
-                    // nothing interesting happened
+                if (i == noRead) {
+                    // no new information has arrived
                     if (System.currentTimeMillis() - lastEvent >= endingTimeout)
                         break;
                 } else {
@@ -284,31 +268,26 @@ public class IrWidget implements IHarcHardware, ICapture {
                 }
 
                 last = data[bytesRead - 1];
-
-                if (debug > 10) {
-                    System.out.print(x + "\t" + bytesRead);
-                    for (i = 0; i < x; i++) {
-                        byte num = data[bytesRead - x + i];
-                        System.out.print("\t" + num);
-                    }
-                    System.out.println();
-                }
             }
-        }
-        boolean success = compute(bytesRead);
-        try {
-            seq = success ? new ModulatedIrSequence(new IrSequence(times), frequency, null) : null;
-        } catch (OddSequenceLengthException ex) {
-            System.err.println("Internal error: " + ex.getMessage());
-        }
-
-        unsetMode();
-        try {
+            boolean success = compute(bytesRead);
+            if (success)
+                try {
+                    ModulatedIrSequence modulatedIrSequence = new ModulatedIrSequence(new IrSequence(times), frequency, null);
+                    if (verbose)
+                        System.err.println("<Received: " + modulatedIrSequence.toString(true));
+                    return modulatedIrSequence;
+                } catch (OddSequenceLengthException ex) {
+                    throw new ThisCannotHappenException(ex);
+                }
+            else {
+                if (verbose)
+                    System.err.println("FAIL");
+                return null;
+            }
+        } finally {
+            disableIrWidgetMode();
             inputStream.close();
-        } catch (IOException ex) {
         }
-
-        return seq;
     }
 
     /**
@@ -327,7 +306,7 @@ public class IrWidget implements IHarcHardware, ICapture {
 
     @Override
     public boolean isValid() {
-        return portIdentifier != null;
+        return serialPort != null;
     }
 
     /**
@@ -345,26 +324,11 @@ public class IrWidget implements IHarcHardware, ICapture {
     private boolean compute(int noBytes) {
         if (noBytes == 0)
             return false;
-        return mode.pulse() ? computePulses(noBytes) : computeTimes(noBytes);
-    }
 
-    private boolean computeTimes(int noBytes) {
-        int offset = 2;
-        dataLength = noBytes - offset;
-        times = new int[dataLength/2];
-        for (int i = 0; i < dataLength/2; i++) {
-            int t = toIntAsUnsigned(data[2*i+offset]) | (toIntAsUnsigned(data[2*i+1+offset]) << 8);
-            t = ((t&0x8000) != 0) ? (t&0x7FFF) : -t;
-            times[i] = t*16;
-        }
-        return true;
-    }
-
-    private boolean computePulses(int noBytes) {
         // replace the existing, incremental data by actual count in the intervals
-        for (int i = 0; i < noBytes-1; i++)
-            data[i] = (byte)(mask & (data[i+1] - data[i]));
-        dataLength = noBytes - 1;
+        for (int i = 0; i < noBytes - 1; i++)
+            data[i] = (byte) (MASK & (data[i + 1] - data[i]));
+        dataLength = (noBytes - 1) & ~1;
 
         // Compute frequency
         int periods = 0;
@@ -373,24 +337,21 @@ public class IrWidget implements IHarcHardware, ICapture {
         int gaps = 0;
 
         for (int i = 1; i < dataLength; i++) {
-            if (i < dataLength - 1 && data[i] > 0 && data[i-1] > 0 && data[i+1] > 0) {
+            if (i < dataLength - 1 && data[i] > 0 && data[i - 1] > 0 && data[i + 1] > 0) {
                 periods += data[i];
                 bins++;
             }
-            if (data[i] > 0 && data[i-1] == 0)
+            if (data[i] > 0 && data[i - 1] == 0)
                 pulses++;
-            if (data[i] == 0 && data[i-1] > 0)
+            if (data[i] == 0 && data[i - 1] > 0)
                 gaps++;
         }
 
         if (bins == 0)
             return false;
 
-        if (debug > 0)
-            System.out.println("IrWidget read pulses = " + pulses + ", gaps = " + gaps);
-        frequency = periods/IrCoreUtils.microseconds2seconds(bins * MICROS_IN_TICK);
-
-        times = new int[pulses + gaps];
+        frequency = periods / IrCoreUtils.microseconds2seconds(bins * MICROS_PER_TICK);
+        times = new int[2 * gaps];
         int index = 0;
         int currentCount = 0;
         int currentGap = 0;
@@ -402,7 +363,7 @@ public class IrWidget implements IHarcHardware, ICapture {
                 if (currentState)
                     currentCount += data[i];
                 else
-                    currentGap += MICROS_IN_TICK;
+                    currentGap += MICROS_PER_TICK;
             } else {
                 if (currentState) { // starting flash
                     currentGap += gapDuration(data[i]);
@@ -415,110 +376,24 @@ public class IrWidget implements IHarcHardware, ICapture {
                 } else { // starting gap
                     times[index] = pulseDuration(currentCount);
                     index++;
-                    currentGap = gapDuration(data[i-1]) + MICROS_IN_TICK;
+                    currentGap = gapDuration(data[i - 1]) + MICROS_PER_TICK;
                     currentCount = 0;
                 }
             }
             previousState = currentState;
         }
-        times[index] = currentState ? pulseDuration(currentCount) : -currentGap;
-        index++;
-        if (debug > 0)
-            System.out.println(index + " " + pulses + " " + gaps);
-        if (debug > 0)
-            System.out.println(index + " " + pulses + " " + gaps);
+        if (index < 2 * gaps)
+            times[index] = currentState ? pulseDuration(currentCount) : -currentGap;
+
         return true;
     }
 
     private int pulseDuration(int pulses) {
-        int x = (int) Math.round(IrCoreUtils.seconds2microseconds(pulses/frequency));
+        int x = (int) Math.round(IrCoreUtils.seconds2microseconds(pulses / frequency));
         return x;
     }
 
     private int gapDuration(int pulses) {
-        return MICROS_IN_TICK - pulseDuration(pulses);
-    }
-
-
-    private void setMode(Modes mode) {
-        try {
-            RXTXPort serial = (RXTXPort) commPort;
-            serial.setDTR(false);
-            serial.setRTS(false);
-            Thread.sleep(shortDelay); // ???
-            switch (mode) {
-                case irwidgetPulse:            // Kevin's case 0,2
-                    serial.setDTR(true);
-                    Thread.sleep(longDelay);
-                    serial.setRTS(true);
-                    break;
-                case miniPovPulse:            // Kevin's case 1
-                    serial.setRTS(true);
-                    Thread.sleep(longDelay);
-                    serial.setDTR(true);
-                    break;
-                case irwidgetTime:            // Kevin's case 3
-                    serial.setRTS(true);
-                    serial.setDTR(true);
-                    break;
-                case miniPovTime:            // Kevin's case 4
-                    serial.setDTR(true);
-                    serial.setRTS(true);
-                    break;
-                default:
-                    // This cannot happen
-                    assert (false);
-            }
-        } catch (InterruptedException ex) {
-            System.err.println("Interrupted; likely programming error.");
-        }
-    }
-
-    private void unsetMode() {
-        RXTXPort serial = (RXTXPort) commPort;
-        serial.setDTR(false);
-        serial.setRTS(false);
-    }
-
-    /**
-     * Different hardware and different operating modes supported (more-or-less) by the software.
-     * Presently, only irwidgetPulse is to be considered as tested.
-     */
-    private enum Modes {
-        irwidgetPulse,
-        irwidgetTime,
-        miniPovPulse,
-        miniPovTime;
-
-        public static boolean pulse(Modes m) {
-            return (m == irwidgetPulse) || (m == miniPovPulse);
-        }
-
-        public boolean pulse() {
-            return (this == irwidgetPulse) || (this == miniPovPulse);
-        }
-
-        public static Modes lanidro(int i) {
-            int j = 0;
-            for (Modes m : values()) {
-                if (i == j)
-                    return m;
-                j++;
-            }
-            return null;
-        }
-
-        @Override
-        public String toString() {
-            return this == irwidgetPulse ? "IrWidget count"
-                    : this == irwidgetTime ? "IrWidget time"
-                    : this == miniPovPulse ? "MiniPOV count"
-                    : this == miniPovTime ? "MiniPOV time"
-                    : "?";
-        }
-
-        public static String toString(Modes m) {
-            return m.toString();
-        }
+        return MICROS_PER_TICK - pulseDuration(pulses);
     }
 }
