@@ -56,7 +56,7 @@ public class CommandVersion extends AbstractCommand {
         else {
             out.println("Serial: " + LocalSerialPort.getSoftwareVersion());
             IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
-            out.println(Version.versionString);
+            out.println(Version.versionString + "; commitId = " + Version.commitId);
             out.println("Database: " + (commandLineArgs.configFiles != null ? commandLineArgs.configFiles : "")
                     + " version: " + irpDatabase.getConfigFileVersion());
 
