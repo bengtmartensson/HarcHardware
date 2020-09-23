@@ -32,6 +32,7 @@ import org.harctoolbox.cmdline.UsageException;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.ir.ICapture;
+import org.harctoolbox.harchardware.ir.IIrReader;
 import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.ModulatedIrSequence;
@@ -81,6 +82,7 @@ public class CommandCapture extends AbstractCommand {
 
     public boolean collect(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, HarcHardwareException, InvalidArgumentException, IOException, IrpParseException, UnknownProtocolException, SAXException {
         commandLineArgs.assertNonNullClass();
+        commandLineArgs.setupTimeouts((IIrReader) hardware);
         if (! (pronto || raw || decode || analyze)) {
             logger.warning("No output format selected, forcing Pronto Hex");
             pronto = true;
@@ -98,7 +100,7 @@ public class CommandCapture extends AbstractCommand {
         if (!commandLineArgs.quiet)
             out.println("Now send a signal to the selected capturing device.");
 
-        ModulatedIrSequence irSequence = collect(hardware, commandLineArgs);
+        ModulatedIrSequence irSequence = collect(hardware);
         if (irSequence == null || irSequence.isEmpty()) {
             out.println("No signal received.");
             return false;
@@ -151,9 +153,8 @@ public class CommandCapture extends AbstractCommand {
         return true;
     }
 
-    public ModulatedIrSequence collect(IHarcHardware hardware, CommandCommonOptions commandLineArgs) throws HarcHardwareException, IOException, InvalidArgumentException {
+    public ModulatedIrSequence collect(IHarcHardware hardware) throws HarcHardwareException, IOException, InvalidArgumentException {
         ICapture hw = (ICapture) hardware;
-        commandLineArgs.setupTimeouts(hw);
         return hw.capture();
     }
 }

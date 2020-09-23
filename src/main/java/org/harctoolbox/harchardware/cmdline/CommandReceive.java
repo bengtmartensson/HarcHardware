@@ -46,9 +46,8 @@ public class CommandReceive extends CommandCapture {
     }
 
     @Override
-    public ModulatedIrSequence collect(IHarcHardware hardware, CommandCommonOptions commandLineArgs) throws IOException, HarcHardwareException, OddSequenceLengthException {
+    public ModulatedIrSequence collect(IHarcHardware hardware) throws IOException, HarcHardwareException, OddSequenceLengthException {
         IReceive hw = (IReceive) hardware;
-        commandLineArgs.setupTimeouts(hw);
         IrSequence irSequence = hw.receive();
         return irSequence != null ? new ModulatedIrSequence(irSequence, frequency) : null;
     }
