@@ -25,7 +25,6 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
@@ -33,13 +32,10 @@ import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
 import org.harctoolbox.harchardware.comm.TcpSocketPort;
-import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.OddSequenceLengthException;
-import org.harctoolbox.ircore.Pronto;
-import org.harctoolbox.ircore.ThisCannotHappenException;
 
 /**
  *
@@ -112,73 +108,6 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         this.verbose = false;
         this.hardware = hardware;
         this.useReceiveForCapture = false;
-    }
-
-    public void testLcd() throws IOException, HarcHardwareException {
-        setLcd("LCD lcd");
-    }
-
-    public void testBase() throws IOException {
-        logger.log(Level.INFO, "Version: {0}", getVersion());
-    }
-
-    public void testTransmit() throws IOException, HarcHardwareException {
-        try {
-            IrSignal rc5_0_0 = Pronto.parse("0000 0073 0000 000D 0020 0020 0040 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0020 0CC8");
-            sendIr(rc5_0_0, 1);
-        } catch (Pronto.NonProntoFormatException | InvalidArgumentException ex) {
-            throw new ThisCannotHappenException();
-        }
-    }
-
-    @SuppressWarnings("SleepWhileInLoop")
-    public void testLed() throws IOException, InterruptedException {
-        for (int i = 1; i <= 8; i++) {
-            try {
-                logger.log(Level.FINE, "Testing LED #{0}", i);
-                setLed(i, true);
-                Thread.sleep(1000);
-                setLed(i, false);
-            } catch (HarcHardwareException ex) {
-                logger.log(Level.WARNING, "Failed for LED #{0}, not present?", i);
-            }
-        }
-    }
-
-    public void testReceive() throws HarcHardwareException, IOException {
-        System.out.println("Now send an IR signal to the demodulating receiver");
-        if (hasModule("lcd"))
-            setLcd("Send signal to demod.");
-        IrSequence irSequence = receive();
-        if (irSequence == null) {
-            logger.log(Level.WARNING, "No input");
-        } else {
-            ModulatedIrSequence seq = new ModulatedIrSequence(irSequence, ModulatedIrSequence.DEFAULT_FREQUENCY);
-            logger.log(Level.INFO, seq.toString(true));
-        }
-    }
-
-    public void testCapture() throws HarcHardwareException, IOException, OddSequenceLengthException {
-        System.out.println("Now send an IR signal to the non-demodulating receiver");
-        if (hasModule("lcd"))
-            setLcd("Send signal to non-demod.");
-        ModulatedIrSequence irSequence = capture();
-        if (irSequence == null) {
-            logger.warning("No input detected");
-        } else {
-            logger.log(Level.INFO, irSequence.toString(true));
-        }
-    }
-
-    public void testParameters() throws IOException, HarcHardwareException {
-        String parameterName = "capturesize";
-        int newValue = 123;
-        getParameter(parameterName);
-        //System.out.println(old);
-        setParameter(parameterName, newValue);
-        long newVal = getParameter(parameterName);
-        if (newVal != newValue)
-            logger.log(Level.SEVERE, "Parameters failed");
     }
 
     public void setUseReceiveForCapture(boolean val) throws HarcHardwareException {
@@ -590,24 +519,8 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         sendStringWaitOk(LED_COMMAND + SEPARATOR + led + SEPARATOR + (state ? "on" : "off"));
     }
 
-    public void setLed(int led, int flashTime) {
-        // TODO
-    }
-
     public void setLcd(String message) throws IOException, HarcHardwareException {
         sendStringWaitOk(LCD_COMMAND + " " + message);
-    }
-
-    public void setLcd(String message, int x, int y) {
-        // TODO
-    }
-
-    public void setLcdBacklight(boolean state) {
-        // TODO
-    }
-
-    public void setLcdBacklight(int flashTime) {
-        // TODO
     }
 
     private void sendStringWaitOk(String line) throws IOException, HarcHardwareException {
