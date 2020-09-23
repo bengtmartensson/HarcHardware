@@ -58,7 +58,14 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private static final String RESET_COMMAND = "reset";
     private static final String LED_COMMAND = "led";
     private static final String LCD_COMMAND = "lcd";
+    private static final String SET_PARAMETER_COMMAND = "parameter";
     private static final String CAPTURE_MODULENAME = "capture";
+    private static final String PARAMETERS_MODULENAME = "parameters";
+    private static final String BEGIN_TIMEOUT_PARAMETER_NAME = "beginTimeout";
+    private static final String ENDING_CAPTURE_TIMEOUT_PARAMETER_NAME = "captureendingTimeout";
+    private static final String ENDING_RECEIVE_TIMEOUT_PARAMETER_NAME = "receiveendingTimeout";
+    private static final String MAX_CAPTURE_LENGTH_PARAMETER_NAME = "capturesize";
+
     private static final String OK_STRING = "OK";
     private static final String ERROR_STRING = "ERROR";
     private static final String TIMEOUT_STRING = ".";
@@ -92,12 +99,13 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private int debug;
     private boolean useReceiveForCapture;
     private String lineEnding;
-    private int beginTimeout;
-    private int maxCaptureLength;
-    private int endingTimeout;
+    private Integer beginTimeout = null;
+    private Integer maxCaptureLength = null;
+    private Integer endingTimeout = null;
     private int fallbackFrequency = (int) ModulatedIrSequence.DEFAULT_FREQUENCY;
     private boolean stopRequested = false;
     private boolean pendingCapture = false;
+    private boolean hasParameters = false;
 
     public GirsClient(T hardware) throws HarcHardwareException, IOException {
         this.lineEnding = DEFAULT_LINEENDING;
@@ -164,7 +172,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     public void testParameters() throws IOException, HarcHardwareException {
         String parameterName = "capturesize";
-        long newValue = 123L;
+        int newValue = 123;
         getParameter(parameterName);
         //System.out.println(old);
         setParameter(parameterName, newValue);
@@ -209,23 +217,26 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     @Deprecated
     @Override
-    public void setTimeout(int timeout) throws IOException {
+    public void setTimeout(int timeout) throws IOException, HarcHardwareException {
         setBeginTimeout(timeout);
     }
 
     /**
      * @return the beginTimeout
      */
-    public int getBeginTimeout() {
+    public Integer getBeginTimeout() {
         return beginTimeout;
     }
 
     /**
      * @param beginTimeout the beginTimeout to set
+     * @throws java.io.IOException
+     * @throws org.harctoolbox.harchardware.HarcHardwareException
      */
     @Override
-    public void setBeginTimeout(int beginTimeout) {
+    public void setBeginTimeout(int beginTimeout) throws IOException, HarcHardwareException {
         this.beginTimeout = beginTimeout;
+        setParameter(BEGIN_TIMEOUT_PARAMETER_NAME, beginTimeout);
     }
 
     /**
@@ -237,10 +248,13 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     /**
      * @param maxCaptureLength the maxCaptureLength to set
+     * @throws java.io.IOException
+     * @throws org.harctoolbox.harchardware.HarcHardwareException
      */
     @Override
-    public void setCaptureMaxSize(int maxCaptureLength) {
+    public void setCaptureMaxSize(int maxCaptureLength) throws IOException, HarcHardwareException {
         this.maxCaptureLength = maxCaptureLength;
+        setParameter(MAX_CAPTURE_LENGTH_PARAMETER_NAME, maxCaptureLength);
     }
 
     /**
@@ -252,10 +266,14 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     /**
      * @param endingTimeout the endingTimeout to set
+     * @throws java.io.IOException
+     * @throws org.harctoolbox.harchardware.HarcHardwareException
      */
     @Override
-    public void setEndingTimeout(int endingTimeout) {
+    public void setEndingTimeout(int endingTimeout) throws IOException, HarcHardwareException {
         this.endingTimeout = endingTimeout;
+        setParameter(ENDING_CAPTURE_TIMEOUT_PARAMETER_NAME, endingTimeout);
+        setParameter(ENDING_RECEIVE_TIMEOUT_PARAMETER_NAME, endingTimeout);
     }
 
     /**
@@ -319,6 +337,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         if (line != null)
             modules = Arrays.asList(line.toLowerCase(Locale.US).split("\\s+"));
         setUseReceiveForCapture();
+        hasParameters =  modules.contains(PARAMETERS_MODULENAME);
     }
 
     @SuppressWarnings("SleepWhileInLoop")
@@ -610,10 +629,14 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         return value;
     }
 
-    private void setParameter(String parameterName, long newValue) throws IOException, HarcHardwareException {
-        hardware.sendString("parameter " + parameterName + " " + Long.toString(newValue) + lineEnding);
-        String answer = readString(true);
-        if (answer == null)
-            throw new HarcHardwareException("No answer received.");
+    private void setParameter(String parameterName, int newValue) throws IOException, HarcHardwareException {
+        if (hasParameters) {
+            hardware.sendString(SET_PARAMETER_COMMAND + SEPARATOR + parameterName + SEPARATOR + Integer.toString(newValue) + lineEnding);
+            String answer = readString(true);
+            if (answer == null)
+                throw new HarcHardwareException("No answer received.");
+            if (!answer.equals(parameterName + "=" + Integer.toString(newValue)))
+                throw new HarcHardwareException("Wrong answer received.");
+        }
     }
 }

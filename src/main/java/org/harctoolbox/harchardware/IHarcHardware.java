@@ -51,8 +51,9 @@ public interface IHarcHardware extends Closeable {
      * Set timeout in milliseconds. Exact semantics may be dependent on the hardware.
      * @param timeout Timeout in milliseconds.
      * @throws IOException
+     * @throws org.harctoolbox.harchardware.HarcHardwareException
      */
-    public void setTimeout(int timeout) throws IOException;
+    public void setTimeout(int timeout) throws IOException, HarcHardwareException;
 
     /**
      * Checks validity of an instance. Exact meaning can vary.

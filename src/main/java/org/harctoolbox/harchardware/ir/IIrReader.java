@@ -18,6 +18,7 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
+import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 
 /**
@@ -29,9 +30,9 @@ public interface IIrReader extends IHarcHardware {
     public static final int DEFAULT_CAPTURE_MAXSIZE = 500;
     public static final int DEFAULT_ENDING_TIMEOUT = 100;
 
-    public void setBeginTimeout(int integer) throws IOException;
+    public void setBeginTimeout(int integer) throws IOException, HarcHardwareException;
 
-    public void setCaptureMaxSize(int integer);
+    public void setCaptureMaxSize(int integer) throws IOException, HarcHardwareException;
 
-    public void setEndingTimeout(int integer);
+    public void setEndingTimeout(int integer) throws IOException, HarcHardwareException;
 }

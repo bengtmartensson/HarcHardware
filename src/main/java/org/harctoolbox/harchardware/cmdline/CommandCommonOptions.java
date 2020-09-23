@@ -196,7 +196,7 @@ public class CommandCommonOptions extends CommandDecodeParameterOptions {
             initializeIP("--irtrans", "IrTrans");
     }
 
-    public void setupTimeouts(IIrReader hardware) throws IOException {
+    public void setupTimeouts(IIrReader hardware) throws IOException, HarcHardwareException {
         if (beginTimeout != null)
             hardware.setBeginTimeout(beginTimeout);
         if (capturemaxlength != null)

@@ -142,7 +142,7 @@ public class FramedDevice {
         hardware.setDebug(debug);
     }
 
-    public void setTimeout(int timeout) throws IOException {
+    public void setTimeout(int timeout) throws IOException, HarcHardwareException {
         hardware.setTimeout(timeout);
     }
 
