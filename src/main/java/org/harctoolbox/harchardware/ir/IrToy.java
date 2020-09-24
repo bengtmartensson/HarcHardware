@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2013, 2014, 2015 Bengt Martensson.
+Copyright (C) 2013, 2014, 2015, 2020 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@ package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.harchardware.TimeoutException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
 import org.harctoolbox.ircore.InvalidArgumentException;
@@ -42,6 +42,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     public static final String defaultPortName = "/dev/ttyACM0";
     public static final int defaultBaudRate = 115200;
     public static final LocalSerialPort.FlowControl defaultFlowControl = LocalSerialPort.FlowControl.RTSCTS;
+    public static final int defaultTimeout = DEFAULT_BEGIN_TIMEOUT;
 
     private static final int dataSize = 8;
     private static final LocalSerialPort.StopBits stopBits = LocalSerialPort.StopBits.ONE;
@@ -130,8 +131,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
 
     public IrToy(String portName, boolean verbose, Integer timeout, Integer baudRate, Integer maxLearnLength, LocalSerialPort.FlowControl flowControl)
             throws IOException {
-        super(LocalSerialPortRaw.class, LocalSerialPort.canonicalizePortName(portName, defaultPortName), verbose, timeout, baudRate, dataSize, stopBits, parity, flowControl);
-        this.captureMaxSize = maxLearnLength;
+        super(LocalSerialPortRaw.class, LocalSerialPort.canonicalizePortName(portName, defaultPortName), verbose, timeout != null ? timeout : defaultTimeout, baudRate, dataSize, stopBits, parity, flowControl);
     }
 
     private void goSamplingMode() throws IOException, HarcHardwareException {
@@ -269,34 +269,29 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     }
 
     private int[] recv() throws IOException  {
-        int[] result = null;
         try {
-            ArrayList<Integer> array = new ArrayList<>(16);
+            int[] array = new int[captureMaxSize];
+            int size = 0;
             stopCaptureRequest = false;
-            long maxLearnLengthMicroSeconds = captureMaxSize * 1000L;
-            long sum = 0;
             setPin(receivePin, true);
-            while (!stopCaptureRequest && sum <= maxLearnLengthMicroSeconds) { // if leaving here, reset is needed.
+            for (int i = 0; i < captureMaxSize; i++) { // if leaving here, reset is needed.
+                if (stopCaptureRequest)
+                    return null;
                 int val = read2Bytes(); // throws TimeoutException
                 int ms = (int) Math.round(val * period);
-                array.add(ms);
-                sum += ms;
+                array[i] = ms;
+                size++;
                 if (val == 0xffff)
                     // Only way for timeout, 1.4 seconds. Too long for most use cases ... :-\
                     break;
             }
-            if (stopCaptureRequest) {
-                setPin(receivePin, false);
-                return null;
-            }
-            result = new int[array.size()];
-            for (int i = 0; i < array.size(); i++) {
-                result[i] = array.get(i);
-            }
+
+            int[] result = new int[size];
+            System.arraycopy(array, 0, result, 0, size);
+            return result;
         } finally {
             setPin(receivePin, false);
         }
-        return result;
     }
 
     private double getFrequency(int onTimes) throws IOException {
@@ -315,7 +310,12 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         // reset, while I do not want any already recorder signals.
         reset(5);
         goSamplingMode();
-        int[] data = recv(); // throws TimeoutException
+        int[] data;
+        try {
+            data = recv(); // throws TimeoutException as per beginTimeout
+        } catch (TimeoutException ex) {
+            return null;
+        }
         if (stopCaptureRequest || data == null)
             return null;
 

@@ -47,8 +47,8 @@ irtoy.test: $(JAR)
 	$(MAIN) --irtoy version
 	$(MAIN) --irtoy transmit -p nec1 -n D=122,F=29
 	$(MAIN) --irtoy transmit --count 10 -p nec1 -n D=122,F=27
-	@echo Now shoot an IR signal at your /dev/irtoy device.
-	$(MAIN) --irtoy receive -r -d
+#	@echo Now shoot an IR signal at your /dev/irtoy device.
+#	$(MAIN) --irtoy receive -r -d
 	@echo Now shoot an IR signal at your /dev/irtoy device.
 	$(MAIN) --irtoy capture -r -d
 	touch $@
