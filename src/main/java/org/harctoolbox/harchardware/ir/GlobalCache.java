@@ -31,6 +31,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -412,9 +413,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                 case "get_learn":
                     ModulatedIrSequence seq = gc.capture();
                     System.out.println(seq);
-//                    if (seq != null) {
-//                        System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
-//                    }
                     break;
                 case "listen_serial":
                     System.err.println("Press Ctrl-C to interrupt.");
@@ -439,11 +437,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         } catch (IOException e) {
             System.err.println("IOException occured.");
             System.exit(1);
-//        } catch (IrpException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-        //} catch (NoSuchTransmitterException ex) {
-        //    Logger.getLogger(GlobalCache.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Pronto.NonProntoFormatException ex) {
             Logger.getLogger(GlobalCache.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -683,23 +676,16 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         if (noLines >= 0) {
             result = new String[noLines];
             for (int i = 0; i < noLines; i++) {
-                result[i] = tcpSocketChannel.readString();// may hang
-//               if (verbose)
-//                    System.err.println(result[i]);
+                result[i] = tcpSocketChannel.readString();// throws SocketTimeoutException after so_timeout
                if (i == 0 && expectedFirstLine != null)
                     if (!result[0].startsWith(expectedFirstLine)) {
                         logger.log(Level.WARNING, "Expected \"{0}\", returning immediately.", expectedFirstLine);
                         break;
                     }
-
-                //while (tcpSocketChannel.getIn().ready()) {
-                //    String resp = tcpSocketChannel.getIn().readLine();
-                //    result.append('\n').append(resp);
-                //}
             }
         } else {
-            ArrayList<String> array = new ArrayList<>(8);
-            String lineRead = tcpSocketChannel.readString(); // may hang
+            List<String> array = new ArrayList<>(8);
+            String lineRead = tcpSocketChannel.readString(); // throws SocketTimeoutException after so_timeout
             if (lineRead != null) {
                 array.add(lineRead);
                 while (tcpSocketChannel.getBufferedIn().ready()) {
@@ -1007,7 +993,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
-    public void setBeginTimeout(int integer) throws IOException {
+    public void setBeginTimeout(int timeout) throws IOException {
         tcpSocketChannel.setTimeout(timeout);
     }
 
