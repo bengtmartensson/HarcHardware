@@ -96,7 +96,7 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
             str.append(seq.toString(useSigns));
         } else {
             IrSignal signal = new IrSignal(seq, seq.getFrequency(), seq.getDutyCycle());
-            str.append(Pronto.toString(irSignal));
+            str.append(Pronto.toString(signal));
         }
         str.append(lineEnding);
         return str.toString();
@@ -104,6 +104,5 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
 
     @Override
     public void setDebug(int debug) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

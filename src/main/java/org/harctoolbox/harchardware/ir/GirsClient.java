@@ -533,16 +533,19 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             throw new HarcHardwareException("No \"" + OK_STRING + "\" received, instead \"" + answer + "\".");
     }
 
-    private long getParameter(String parameterName) throws IOException, HarcHardwareException {
-        hardware.sendString("parameter " + parameterName + lineEnding);
-        String answer = readString(true);
-        if (answer == null)
-            throw new HarcHardwareException("No answer received.");
-        long value = Long.parseLong(answer.split("=")[1]);
-        return value;
+    public long getParameter(String parameterName) throws IOException, HarcHardwareException {
+        if (hasParameters) {
+            hardware.sendString("parameter " + parameterName + lineEnding);
+            String answer = readString(true);
+            if (answer == null)
+                throw new HarcHardwareException("No answer received.");
+            long value = Long.parseLong(answer.split("=")[1]);
+            return value;
+        } else
+            throw new HarcHardwareException("parameters not implemented.");
     }
 
-    private void setParameter(String parameterName, int newValue) throws IOException, HarcHardwareException {
+    public void setParameter(String parameterName, int newValue) throws IOException, HarcHardwareException {
         if (hasParameters) {
             hardware.sendString(SET_PARAMETER_COMMAND + SEPARATOR + parameterName + SEPARATOR + Integer.toString(newValue) + lineEnding);
             String answer = readString(true);
@@ -550,6 +553,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
                 throw new HarcHardwareException("No answer received.");
             if (!answer.equals(parameterName + "=" + Integer.toString(newValue)))
                 throw new HarcHardwareException("Wrong answer received.");
-        }
+        } else
+            throw new HarcHardwareException("parameters not implemented.");
     }
 }

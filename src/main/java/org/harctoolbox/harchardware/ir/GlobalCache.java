@@ -165,8 +165,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return listenBeacon(beaconTimeout);
     }
 
-    public static AmxBeaconListener newListener(AmxBeaconListener.Callback callback, boolean debug) {
-        AmxBeaconListener abl = new AmxBeaconListener(callback,  "-Make", "GlobalCache", debug);
+    public static AmxBeaconListener newListener(AmxBeaconListener.Callback callback) {
+        AmxBeaconListener abl = new AmxBeaconListener(callback,  "-Make", "GlobalCache");
         abl.start();
         return abl;
     }

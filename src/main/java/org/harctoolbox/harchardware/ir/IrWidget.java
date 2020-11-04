@@ -60,11 +60,6 @@ public class IrWidget implements IHarcHardware, ICapture {
     private static final int INVALID = -1;
     private static final int EMERGENCY_TIMEOUT = 10000;
 
-    // I hate this "nobody needs or understands unsigned" by Gosling...
-    private static int toIntAsUnsigned(byte b) {
-        return b >= 0 ? b : b + 256;
-    }
-
     private final CommPortIdentifier portIdentifier;
     private RXTXPort serialPort;
     private int debug;

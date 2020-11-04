@@ -48,8 +48,8 @@ public class Mode2Parser {
 
     public static void main(String[] args) {
         try {
-            Mode2Parser parser = args.length < 2 ? new Mode2Parser(System.in, false, Integer.parseInt(args[0]))
-                    : new Mode2Parser(new File(args[0]), false, Integer.parseInt(args[1]));
+            Mode2Parser parser = args.length < 2 ? new Mode2Parser(System.in, Integer.parseInt(args[0]))
+                    : new Mode2Parser(new File(args[0]), Integer.parseInt(args[1]));
             List<IrSequence> seqs = parser.readIrSequencesUntilEOF();
             int i = 0;
             for (IrSequence part : seqs) {
@@ -63,22 +63,20 @@ public class Mode2Parser {
 
     private final LineNumberReader reader;
     private int threshold;
-    private boolean verbose;
     private boolean valid;
 
-    public Mode2Parser(Reader reader, boolean verbose, int threshold) {
+    public Mode2Parser(Reader reader, int threshold) {
         this.reader = new LineNumberReader(reader);
         this.threshold = threshold;
-        this.verbose = verbose;
         this.valid = true;
     }
 
-    public Mode2Parser(File file, boolean verbose, int threshold) throws FileNotFoundException {
-        this(new InputStreamReader(new FileInputStream(file), Charset.forName("US-ASCII")), verbose, threshold);
+    public Mode2Parser(File file, int threshold) throws FileNotFoundException {
+        this(new InputStreamReader(new FileInputStream(file), Charset.forName("US-ASCII")), threshold);
     }
 
-    public Mode2Parser(InputStream stream, boolean verbose, int threshold) {
-        this(new InputStreamReader(stream, Charset.forName("US-ASCII")), verbose, threshold);
+    public Mode2Parser(InputStream stream, int threshold) {
+        this(new InputStreamReader(stream, Charset.forName("US-ASCII")), threshold);
     }
 
     public boolean isValid() {
@@ -121,8 +119,6 @@ public class Mode2Parser {
             synchronized (reader) {
                 line = reader.readLine();
             }
-            if (verbose)
-                System.err.println(line);
             if (line == null) {
                 valid = false;
                 break;
@@ -184,12 +180,5 @@ public class Mode2Parser {
      */
     public void setThreshold(int threshold) {
         this.threshold = threshold;
-    }
-
-    /**
-     * @param verbose the verbose to set
-     */
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
     }
 }

@@ -28,11 +28,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class listens for an AMX beacon and reports its findings.
  */
 public class AmxBeaconListener {
+
+    private static final Logger logger = Logger.getLogger(AmxBeaconListener.class.getName());
+
     private final static int reapInterval = 60*1000; // 60 seconds
     private final static int reapAge = 2*60*1000; // 2 minutes
 
@@ -45,7 +50,7 @@ public class AmxBeaconListener {
      * @return
      */
     public static Node listenFor(String key, String value, int timeout) {
-        AmxBeaconListener ab = new AmxBeaconListener(null, key, value, false);
+        AmxBeaconListener ab = new AmxBeaconListener(null, key, value);
         ab.listenForKey(timeout);
         return ab.getFirstKey(key, value);
     }
@@ -54,11 +59,10 @@ public class AmxBeaconListener {
      * Listen for the amount of time given in the argument, then return then nodes found.
      *
      * @param time Time to listen, in microseconds.
-     * @param debug
      * @return
      */
-    public static Collection<Node> listen(int time, boolean debug) {
-        AmxBeaconListener abl = new AmxBeaconListener(null, null, null, debug);
+    public static Collection<Node> listen(int time) {
+        AmxBeaconListener abl = new AmxBeaconListener();
         long endTime = (new Date()).getTime() + time;
         while ((new Date()).getTime() < endTime)
             abl.listenWait((int)(endTime - (new Date()).getTime()));
@@ -75,12 +79,10 @@ public class AmxBeaconListener {
         switch (args.length) {
             case 0:
                 AmxBeaconListener listener = new AmxBeaconListener(new PrintCallback());
-                listener.setDebug(true);
                 listener.start();
                 break;
             case 3:
                 AmxBeaconListener ab = new AmxBeaconListener();
-                ab.setDebug(true);
                 ab.start();
                 int n = 0;
                 while (true) {
@@ -94,7 +96,7 @@ public class AmxBeaconListener {
                 }
                 //break;
             case 1:
-                Collection<Node> result = listen(Integer.parseInt(args[0]), true);
+                Collection<Node> result = listen(Integer.parseInt(args[0]));
                 result.forEach((r) -> {
                     System.out.println(r);
                 });
@@ -114,37 +116,24 @@ public class AmxBeaconListener {
     private Callback callback = null;
     private String key = null;
     private String value = null;
-    private boolean debug = false;
     private Map<InetAddress, Node>nodes = new HashMap<>(8);
 
-    public AmxBeaconListener(Callback callback, String key, String value, boolean debug) {
+    public AmxBeaconListener(Callback callback, String key, String value) {
         this.callback = callback;
         this.key = key;
         this.value = value;
         this.callback = callback;
-        this.debug = debug;
         nodes = new HashMap<>(8);
         listenThread = new ListenThread(this);
         grimReaperThread = new GrimReaperThread(this);
     }
 
-    public AmxBeaconListener(Callback callback, String key, String value) {
-        this(callback, key, value, false);
-    }
-
     public AmxBeaconListener() {
-        this(null, null, null, false);
+        this(null);
     }
 
     public AmxBeaconListener(Callback callback) {
-        this(callback, null, null, false);
-    }
-
-    /**
-     * @param dbg the debug to set
-     */
-    public void setDebug(boolean dbg) {
-        this.debug = dbg;
+        this(callback, null, null);
     }
 
     public void start() {
@@ -158,8 +147,7 @@ public class AmxBeaconListener {
     }
 
     public void stop() {
-        if (debug)
-            System.err.println("Stopping...");
+        logger.info("Stopping");
         grimReaperThread.interrupt();
         listenThread.interrupt();
     }
@@ -167,7 +155,7 @@ public class AmxBeaconListener {
     private synchronized void printNodes() {
         System.out.println(nodes.size());
         nodes.keySet().forEach((addr) -> {
-            System.out.println(debug ? nodes.get(addr) : (addr.getHostName() + " " + nodes.get(addr).lastAliveDate));
+            System.out.println(nodes.get(addr));
         });
     }
 
@@ -200,13 +188,11 @@ public class AmxBeaconListener {
             //InetAddress addr = it.next();
             Node node = kvp.getValue();
             if (node.lastAliveDate.getTime() + reapAge < (new Date()).getTime()) {
-                if (debug)
-                    System.err.println("Reaped " + node.addr.getHostName());
+                logger.log(Level.INFO, "Reaped {0}", node.addr.getHostName());
                 nodes.remove(kvp.getKey());
                 reaped = true;
             } else {
-                if (debug)
-                    System.err.println("Not reaped " + node.addr.getHostName());
+                logger.log(Level.INFO, "Not reaped {0}", node.addr.getHostName());
             }
         }
         if (reaped && callback != null)
@@ -216,8 +202,7 @@ public class AmxBeaconListener {
     private boolean listenWait(int timeout) {
         if (timeout < 0)
             return false;
-        if (debug)
-            System.err.println("listening to beacon...");
+        logger.info("listening to beacon...");
 
         byte buf[] = new byte[1000];
         MulticastSocket sock = null;
@@ -227,19 +212,16 @@ public class AmxBeaconListener {
             sock.joinGroup(group);
             sock.setSoTimeout(timeout);
             DatagramPacket pack = new DatagramPacket(buf, buf.length);
-            if (debug)
-                System.err.println("listening...");
+                logger.info("listening...");
             sock.receive(pack);
-            //System.err.println("got something...");
+            //logger.info("got something...");
             String payload = (new String(pack.getData(), 0, pack.getLength(), Charset.forName("US-ASCII"))).trim();
             InetAddress a = pack.getAddress();
             int port = pack.getPort();
-            if (debug)
-                System.err.print("Got |" + payload + "| from " + a.getHostName() + ":" + port + "...");
+                logger.log(Level.INFO, "Got |{0}| from {1}:{2}...", new Object[]{payload, a.getHostName(), port});
             if (payload.startsWith(AmxBeacon.beaconPreamble))
                 payload = payload.substring(5, payload.length() - 1);
-            if (debug)
-                System.err.println(payload);
+            logger.info(payload);
             String[] pairs = payload.split("><");
             Map<String, String> table = new HashMap<>(pairs.length);
             for (String pair : pairs) {
@@ -250,15 +232,12 @@ public class AmxBeaconListener {
 
             Node r = new Node(a, port, table);
             if (key != null && r.get(key) != null && !r.get(key).equals(value)) {
-                if (debug)
-                    System.err.println("Wrong value of `" + key + "', discarded.");
+                    logger.log(Level.INFO, "Wrong value of `{0}'', discarded.", key);
             } else if (nodes.containsKey(a))  {
-                if (debug)
-                    System.err.println("already in table, just refreshing.");
+                    logger.info("already in table, just refreshing.");
                 nodes.get(a).refresh();
             } else {
-                if (debug)
-                    System.err.println("not in table, entered, invoking callback.");
+                    logger.info("not in table, entered, invoking callback.");
                 synchronized (this) {
                     nodes.put(a, r);
                 }
@@ -267,7 +246,7 @@ public class AmxBeaconListener {
             }
         } catch (IOException ex) {
             if (!SocketTimeoutException.class.isInstance(ex))
-                System.err.println(ex.getMessage());
+                logger.severe(ex.getMessage());
 
             return false;
         } finally {
@@ -292,7 +271,6 @@ public class AmxBeaconListener {
             r = getFirstKey(key, value);
             int millisecondsLeft = (int)(startTime.getTime() + timeout - (new Date()).getTime());
             if (r == null) {
-                //System.err.println(new Date());
                 boolean gotResponse = listenWait(millisecondsLeft);
                 if (!gotResponse)
                     return null;
@@ -358,11 +336,8 @@ public class AmxBeaconListener {
         public void run() {
             while (beaconListener.listenWait(0))
                 ;
-            //synchronized (this) {
-            //    notifyAll();
-            //}
-            if (beaconListener.debug)
-                System.err.println("ListenThread exited.");
+
+            logger.info("ListenThread exited.");
         }
     }
 
@@ -385,8 +360,7 @@ public class AmxBeaconListener {
                     status = false;
                 }
             }
-            if (beacon.debug)
-                System.err.println("GrimReaperThread reaped.");
+            logger.info("GrimReaperThread reaped.");
         }
     }
 

@@ -35,6 +35,8 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.comm.IWeb;
@@ -44,6 +46,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public final class EzControlT10 implements IHarcHardware, IWeb {
+
+    static final Logger logger = Logger.getLogger(EzControlT10.class.getName());
 
     public final static String defaultEzcontrolIP = "192.168.1.42";
     private final static int ezcontrolPortno = 7042;
@@ -267,8 +271,6 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
 
     private String ezcontrolIP;
     private int soTimeout = 1000;
-    private boolean verbose = true;
-    private int debug = 0;
     private Interface interfaze = Interface.http;
     private Status[] state = null; // Note: element 0 unused,
     //starts with 0, T10 starts with 1
@@ -276,7 +278,6 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
 
     public EzControlT10(String hostname, boolean verbose, Interface interfaze) {
         ezcontrolIP = (hostname != null && ! hostname.isEmpty()) ? hostname : defaultEzcontrolIP;
-        this.verbose = verbose;
         this.interfaze = interfaze;
     }
 
@@ -308,9 +309,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
 
     @Override
     public void setDebug(int debug) {
-        this.debug = debug;
     }
-
 
     @Override
     public void setTimeout(int timeout) {
@@ -337,7 +336,6 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
 
     @Override
     public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
     }
 
     public void setInterface(Interface interfaze) {
@@ -396,7 +394,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
                 url = x10Url(house.charAt(0), device, value, n);
                 break;
             default:
-                System.err.println("Sorry, system " + system + " is not yet implemented.");
+                logger.log(Level.SEVERE, "Sorry, system {0} is not yet implemented.", system);
                 break;
         }
         return url;
@@ -449,14 +447,13 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
     }
 
     private boolean udpSendPreset(int switchNumber, Command cmd) {
-        if (verbose)
-            System.err.println("Sending command `" + cmd + "' to preprogrammed " + switchNumber + " to T10 `" + ezcontrolIP + "' over UDP.");
+        logger.log(Level.INFO, "Sending command `{0}'' to preprogrammed {1} to T10 `{2}'' over UDP.", new Object[]{cmd, switchNumber, ezcontrolIP});
 
         InetAddress addr;
         try {
             addr = InetAddress.getByName(ezcontrolIP);
         } catch (UnknownHostException ex) {
-            System.err.println("Unknown host: " + ezcontrolIP);
+            logger.log(Level.SEVERE, "Unknown host: {0}", ezcontrolIP);
             return false;
         }
         byte[] buf = new byte[8];
@@ -484,14 +481,14 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
             sock.receive(errorPacket);
             int sum = checksum(error);
             if (!(((sum & 0xff) == error[0]) && ((sum >> 8) == error[1]) && (error[4] == 0) && (error[5] == 0))) {
-                System.err.println("Erroneous response from T10");
+                logger.severe("Erroneous response from T10");
             } else
                 success = true;
         } catch (IOException e) {
             if (e.getClass() == SocketTimeoutException.class)
-                System.err.println("UDP socket timeout from " + ezcontrolIP);
+                logger.log(Level.SEVERE, "UDP socket timeout from {0}", ezcontrolIP);
             else
-                System.err.println(e.getMessage());
+                logger.severe(e.getMessage());
         }
         return success;
     }
@@ -522,8 +519,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
     }
 
     private byte[] udpStatusInquiry(int n) {
-        if (verbose)
-            System.err.println("Inquiring state from T10 `" + ezcontrolIP + "' on preset " + n + " using UDP.");
+        logger.log(Level.INFO, "Inquiring state from T10 `{0}' on preset {1} using UDP.", new Object[]{ezcontrolIP, n});
         byte[] buf = new byte[bufferSize];
 
         buf[0] = 0x11;
@@ -539,7 +535,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         try {
             addr = InetAddress.getByName(ezcontrolIP);
         } catch (UnknownHostException ex) {
-            System.err.println("Unknown host: " + ezcontrolIP);
+            logger.log(Level.SEVERE, "Unknown host: {0}", ezcontrolIP);
             return null;
         }
 
@@ -550,9 +546,9 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
             sock.receive(dp);
         } catch (IOException e) {
             if (e.getClass() == SocketTimeoutException.class)
-                System.err.println("UDP socket timeout from " + ezcontrolIP);
+                logger.log(Level.SEVERE, "UDP socket timeout from {0}", ezcontrolIP);
             else
-                System.err.println(e.getMessage());
+                logger.severe(e.getMessage());
             buf = null;
         }
         return buf;
@@ -629,8 +625,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
 
 
     private boolean getUrl(String url) throws MalformedURLException, IOException {
-        if (verbose)
-            System.err.println("Getting URL " + url);
+        logger.log(Level.INFO, "Getting URL {0}", url);
 
         (new URL(url)).openStream();
         return true;
@@ -691,9 +686,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         }
 
         String url = "http://" + ezcontrolIP + "/";
-        if (verbose) {
-            System.err.println("Getting URL " + url);
-        }
+        logger.log(Level.INFO, "Getting URL {0}", url);
         StringBuilder data = new StringBuilder(32);
 
         BufferedReader r = null;
@@ -707,17 +700,17 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
                 data.append(str);
             } while (str != null);
         } catch (java.net.MalformedURLException e) {
-            System.err.println(e.getMessage());
+            logger.severe(e.getMessage());
             success = false;
         } catch (java.io.IOException e) {
-            System.err.println("IOException: " + e.getMessage());
+            logger.log(Level.SEVERE, "IOException: {0}", e.getMessage());
             success = false;
         } finally {
             try {
                 if (r != null)
                     r.close();
             } catch (IOException ex) {
-                System.err.println(ex.getMessage());
+                logger.severe(ex.getMessage());
             }
         }
         if (!success)
@@ -760,9 +753,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         }
 
         String url = "http://" + ezcontrolIP + "/timer.html";
-        if (verbose) {
-            System.err.println("Getting URL " + url);
-        }
+        logger.log(Level.INFO, "Getting URL {0}", url);
         StringBuilder data = new StringBuilder(32);
 
         BufferedReader r = null;
@@ -775,17 +766,17 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
                 data.append(str);
             } while (str != null);
         } catch (java.net.MalformedURLException e) {
-            System.err.println(e.getMessage());
+            logger.severe(e.getMessage());
             return false;
         } catch (java.io.IOException e) {
-            System.err.println("IOException: " + e.getMessage());
+            logger.log(Level.SEVERE, "IOException: {0}", e.getMessage());
             return false;
         } finally {
             try {
                 if (r != null)
                     r.close();
             } catch (IOException ex) {
-                System.err.println(ex.getMessage());
+                logger.severe(ex.getMessage());
             }
         }
 
@@ -844,7 +835,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
     public String getTimers() {
         boolean ok = setupStatus() && setupTimers();
         if (!ok) {
-            System.err.println("Could not get timers");
+            logger.severe("Could not get timers");
             return null;
         }
         StringBuilder result = new StringBuilder(32);
@@ -870,7 +861,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         if (n >= 0 && n < t10NumberTimers) {
             result = getTimer((name.charAt(0) - 'A') % 32);
         } else {
-            System.err.println("Erroneous timer name \"" + name + "\".");
+            logger.log(Level.SEVERE, "Erroneous timer name \"{0}\".", name);
         }
         return result;
     }
@@ -970,7 +961,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         try {
             XmlUtils.printDOM(file, xmlConfig());
         } catch (FileNotFoundException e) {
-            System.err.println(e.getMessage());
+            logger.severe(e.getMessage());
         }
     }
 

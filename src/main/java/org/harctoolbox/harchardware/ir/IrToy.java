@@ -19,6 +19,8 @@ package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.TimeoutException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
@@ -37,6 +39,8 @@ import org.harctoolbox.ircore.Pronto;
  *
  */
 public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrSender, ICapture, IReceive {
+
+    static final Logger logger = Logger.getLogger(IrToy.class.getName());
 
     public static final boolean useDebuggingLeds = false; // For best performance, do not use debugging LEDs.
     public static final String defaultPortName = "/dev/ttyACM0";
@@ -300,8 +304,6 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         /*int t2 =*/ read2Bytes();
         /*int t3 =*/ read2Bytes();
         int count = read2Bytes();
-        //System.err.println(t1);System.err.println(t2);System.err.println(t3);System.err.println(count);System.err.println(onTimes);
-        //return (2*PICClockFrequency)/((double)(t3 - t1));
         return count/IrCoreUtils.microseconds2seconds(onTimes) ;
     }
 
@@ -329,8 +331,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             seq = new ModulatedIrSequence(data, frequency);
         } catch (OddSequenceLengthException ex) {
             for (int i = 0; i < data.length; i++)
-                System.err.print(data[i] + " ");
-            System.err.println();
+                logger.log(Level.FINEST, "data[{0}] = {1}", new Object[]{i, data[i]});
             throw new HarcHardwareException("IrToy: Erroneous data received.");
         }
         return seq;
@@ -381,7 +382,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             }
             int noBytes = readByte();
             if (noBytes != emptyBufferSize) {
-                System.err.println("got " + noBytes + " should: " + emptyBufferSize);
+                logger.log(Level.FINE, "got {0} expected {1}", new Object[]{noBytes, emptyBufferSize});
                 succcess = false;
             }
 
@@ -390,11 +391,11 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
                 if (token == transmitByteCountToken) { // 't'
                     int bytesSent = read2Bytes();
                     if (bytesSent != data.length * 2) {
-                        System.err.println("sent " + bytesSent + " should: " + (data.length * 2));
+                        logger.log(Level.FINE, "sent {0} should: {1}", new Object[]{bytesSent, data.length * 2});
                         succcess = false;
                     }
                 } else {
-                    System.err.println("did not get t but " + token);
+                    logger.log(Level.FINE, "did not get t but {0}", token);
                     succcess = false;
                 }
             }
@@ -402,7 +403,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             if (succcess && transmitNotifyEnabled) {
                 int token = readByte();
                 if (token != transmitCompleteSuccess) {
-                    System.err.println("Status: " + token);
+                    logger.log(Level.FINE, "Status: {0}", token);
                     succcess = false;
                 }
             }

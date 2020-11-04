@@ -30,17 +30,6 @@ import org.harctoolbox.harchardware.comm.TcpSocketPort;
  */
 
 public class FramedDevice {
-    /*
-    public static void telnet(ICommandLineDevice hardware, Framer commandFramer) {
-    StringReaderThread readerThread = new StringReaderThread(hardware, System.out);
-    readerThread.start();
-    StringWriterThread writerThread = new StringWriterThread(hardware, new BufferedReader(new InputStreamReader(System.in, IrpUtils.dumbCharset)), commandFramer);
-    writerThread.start();
-    }
-
-    public static void telnet(ICommandLineDevice hardware) {
-    telnet(hardware, new Framer());
-    }*/
 
     public static void main(String[] args) {
         try (ICommandLineDevice denon = new TcpSocketPort("denon", 23, 2000, true, TcpSocketPort.ConnectionMode.keepAlive)) {
@@ -48,7 +37,7 @@ public class FramedDevice {
             String[] result = commandLineDevice.sendString("mvdown", 1, 0);
             System.out.println(result[0]);
         } catch (IOException | HarcHardwareException ex) {
-            System.err.println(ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
@@ -158,86 +147,6 @@ public class FramedDevice {
         hardware.close();
     }
 
-    // Note: does not return, but loops forever!
-    /*private void listenForever(PrintStream printStream) throws IOException {
-        while (true) {
-            String result = hardware.readString();
-            // Ignore whitspace lines
-            if (result.trim().length() > 0) {
-                printStream.println(result);
-            }
-        }
-    }*/
-
-    /*public static class StringReaderThread extends Thread {
-
-        //private ICommandLineDevice hardware;
-        private final PrintStream printStream;
-        private final StringCommander stringCommander;
-
-        public StringReaderThread(ICommandLineDevice hardware, PrintStream printStream) {
-            //this.hardware = hardware;
-            this.printStream = printStream;
-            stringCommander = new StringCommander(hardware);
-        }
-
-        @Override
-        public void run() {
-
-            try {
-                stringCommander.listenForever(printStream);
-            } catch (IOException ex) {
-                System.err.println(ex.getMessage());
-            }
-        }
-    }
-
-    public static class StringWriterThread extends Thread {
-        private final StringCommander stringCommander;
-        private final BufferedReader inStream;
-        private final Framer commandFramer;
-
-        public StringWriterThread(ICommandLineDevice hardware, BufferedReader inStream, Framer commandFramer) {
-            //this.hardware = hardware;
-            this.inStream = inStream;
-            stringCommander = new StringCommander(hardware);
-            this.commandFramer = commandFramer;
-        }
-
-        @Override
-        public void run() {
-            String line = null;
-            boolean done = false;
-            while (! done) {
-                try {
-                    line = inStream.readLine();
-                    if (line == null || line.startsWith("quit")) {
-                        System.err.println("Goodbye");
-                        //doExit(IrpUtils.exitSuccess);
-                        System.exit(IrpUtils.exitSuccess);
-                        break;
-                    }
-                } catch (IOException ex) {
-                    System.err.println(ex.getMessage());
-                }
-                if (line != null && line.equals("quit"))
-                    done = true;
-                else
-                    try {
-                    stringCommander.hardware.sendString(commandFramer.frame(line));
-                } catch (IOException ex) {
-                    System.err.println(ex.getMessage());
-                }
-            }
-            //System.err.println("Goodbye!");
-
-        }
-    }*/
-
-    //private static void doExit(int exitcode) {
-    //    System.exit(exitcode);
-    //}
-
     public static interface IFramer {
 
         public String frame(String arg);
@@ -260,7 +169,6 @@ public class FramedDevice {
 
         @Override
         public String frame(String arg) {
-            //return format.format(toUpper ? arg.toUpperCase(IrpUtils.dumbLocale) : arg);
             return frame(new Object[]{ toUpper ? arg.toUpperCase(Locale.US) : arg });
         }
 

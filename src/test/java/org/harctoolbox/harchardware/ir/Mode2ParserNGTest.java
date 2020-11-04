@@ -62,7 +62,7 @@ public class Mode2ParserNGTest {
     public void testReadIrSequencesUntilEOF() throws IOException {
         System.out.println("readIrSequencesUntilEOF");
         StringReader reader = new StringReader(testString);
-        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULT_THRESHOLD);
+        Mode2Parser instance = new Mode2Parser(reader, Mode2Parser.DEFAULT_THRESHOLD);
         List result;
         result = instance.readIrSequencesUntilEOF();
         assertEquals(result.size(), 2);
@@ -77,7 +77,7 @@ public class Mode2ParserNGTest {
     public void testReadIrSequence() throws IOException {
         System.out.println("readIrSequence");
         StringReader reader = new StringReader(testString);
-        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULT_THRESHOLD);
+        Mode2Parser instance = new Mode2Parser(reader, Mode2Parser.DEFAULT_THRESHOLD);
         IrSequence result;
         try {
             result = instance.readIrSequence();

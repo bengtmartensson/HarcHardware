@@ -31,6 +31,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Version;
 import org.harctoolbox.harchardware.comm.TcpSocketChannel;
@@ -43,6 +45,8 @@ import org.harctoolbox.irp.IrpUtils;
  * Functionally, it resembles the command line program irsend.
  */
 public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSenderStop, ITransmitter {
+
+    static final Logger logger = Logger.getLogger(LircClient.class.getName());
 
     public final static int lircDefaultPort = 8765;
     public final static String defaultLircIP = "127.0.0.1"; // localhost
@@ -203,7 +207,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
         this.lircTransmitter = new LircTransmitter();
         this.timeout = timeout != null ? timeout : defaultTimeout;
         //lircServerIp = (hostname != null) ? hostname : defaultLircIP;
-        this.inetAddress = inetAddress != null ? inetAddress : InetAddress.getByName(defaultLircIP);
+        this.inetAddress = hostname != null ? hostname : InetAddress.getByName(defaultLircIP);
         lircPort = port != null ? port : lircDefaultPort;
         this.verbose = verbose;
         String[] result = sendCommand("VERSION", false);
@@ -332,7 +336,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
                     switch (state) {
                         case P_BEGIN:
                             if (!string.equals("BEGIN")) {
-                                System.err.println("!begin");
+                                logger.info("!begin");
                                 continue;
                             }
                             state = P_MESSAGE;
@@ -354,7 +358,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
                                     done = true;
                                     break;
                                 case "ERROR":
-                                    System.err.println("command failed: " + packet);
+                                    logger.log(Level.SEVERE, "command failed: {0}", packet);
                                     status = -1;
                                     break;
                                 default:
@@ -402,22 +406,24 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
                 }
             }
         } catch (BadPacketException e) {
-            System.err.println("bad return packet");
+            logger.severe("bad return packet");
             status = -1;
         } catch (SocketTimeoutException e) {
-            System.err.println("Sockettimeout Lirc: " + e.getMessage());
+            logger.log(Level.SEVERE, "Sockettimeout Lirc: {0}", e.getMessage());
             result = null;
             status = -1;
         } catch (IOException e) {
-            System.err.println("Couldn't read from " + inetAddress.getCanonicalHostName());
+            logger.log(Level.SEVERE, "Couldn't read from {0}", inetAddress.getCanonicalHostName());
             status = -1;
         } finally {
             try {
                 tcpSocketChannel.close(true);
             } catch (IOException e) {
-                System.err.println(e.getMessage());
+                logger.severe(e.getMessage());
             }
         }
+        logger.log(Level.INFO, "Lirc command {0}", status == 0 ? "succeded." : "failed.");
+
         if (verbose)
             System.err.println("Lirc command " + (status == 0 ? "succeded." : "failed."));
         return status == 0 && result != null ? result.toArray(new String[result.size()]) : null;

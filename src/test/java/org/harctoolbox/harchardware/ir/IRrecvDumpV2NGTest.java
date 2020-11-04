@@ -6,6 +6,7 @@
 package org.harctoolbox.harchardware.ir;
 
 import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.OddSequenceLengthException;
 import static org.testng.Assert.*;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -23,8 +24,6 @@ public class IRrecvDumpV2NGTest {
             = "unsigned int  rawData[67] = {8950,4450, 600,500, 600,500, 600,550, 600,500, 600,500, 600,550, 550,550, 600,1650, 550,1650, 600,1650, 600,1650, 600,1600, 600,1650, 600,1650, 550,1650, 600,1650, 600,1650, 550,1650, 600,1650, 600,1650, 550,1650, 600,550, 550,550, 600,500, 600,500, 600,550, 600,500, 600,500, 600,550, 600,1600, 600,1650, 600,1650, 550};  // NEC 1FFF807";
     private static final String expected = "[8950,4450,600,500,600,500,600,550,600,500,600,500,600,550,550,550,600,1650,550,1650,600,1650,600,1650,600,1600,600,1650,600,1650,550,1650,600,1650,600,1650,550,1650,600,1650,600,1650,550,1650,600,550,550,550,600,500,600,500,600,550,600,500,600,500,600,550,600,1600,600,1650,600,1650,550,20000]";
 
-    public IRrecvDumpV2NGTest() {
-    }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -32,6 +31,9 @@ public class IRrecvDumpV2NGTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+    }
+
+    public IRrecvDumpV2NGTest() {
     }
 
     @BeforeMethod
@@ -44,9 +46,10 @@ public class IRrecvDumpV2NGTest {
 
     /**
      * Test of parse method, of class IRrecvDumpV2.
+     * @throws org.harctoolbox.ircore.OddSequenceLengthException
      */
     @Test
-    public void testParse() throws Exception {
+    public void testParse() throws OddSequenceLengthException {
         System.out.println("parse");
         IrSequence result = IRrecvDumpV2.parse(expected);
         assertNull(result);
