@@ -33,6 +33,7 @@ public class Ping {
     public static boolean ping(String hostname, int timeout) throws UnknownHostException, IOException {
         return (new Ping(hostname, timeout)).ping();
     }
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             boolean result = ping(args[0]);

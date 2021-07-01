@@ -42,6 +42,7 @@ public class AndroidRemoteConfig {
         return string.startsWith("0x") ? Integer.parseInt(string.substring(2), 16) : Integer.parseInt(string);
     }
 
+    @SuppressWarnings({"UseOfSystemOutOrSystemErr", "CallToPrintStackTrace"})
     public static void main(String[] args) {
         try {
             System.out.println(new AndroidRemoteConfig(new File(args[0])));

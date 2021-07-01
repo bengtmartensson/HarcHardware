@@ -46,6 +46,7 @@ public class Mode2Parser {
     public static final int DUMMYGAP = 50000;
     public static final int DEFAULT_THRESHOLD = 100000; // 100ms
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             Mode2Parser parser = args.length < 2 ? new Mode2Parser(System.in, Integer.parseInt(args[0]))

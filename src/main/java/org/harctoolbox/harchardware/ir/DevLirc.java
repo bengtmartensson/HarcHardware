@@ -52,6 +52,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
                 : new File(DEV).listFiles((File dir, String name) -> name.matches(LIRCDEVPATTERN));
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         File[] candidates = getCandidates();
         for (File f : candidates)

@@ -29,6 +29,8 @@ import org.harctoolbox.harchardware.Utils;
 public class TcpSocketPort implements ICommandLineDevice, IBytesCommand, IHarcHardware {
 
     public final static int defaultTimeout = 2000;
+
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             try (TcpSocketPort port = new TcpSocketPort("denon", 23, defaultTimeout, true, ConnectionMode.keepAlive)) {

@@ -31,6 +31,7 @@ import org.harctoolbox.harchardware.comm.TcpSocketPort;
 
 public class FramedDevice {
 
+    @SuppressWarnings({"UseOfSystemOutOrSystemErr", "CallToPrintStackTrace"})
     public static void main(String[] args) {
         try (ICommandLineDevice denon = new TcpSocketPort("denon", 23, 2000, true, TcpSocketPort.ConnectionMode.keepAlive)) {
             FramedDevice commandLineDevice = new FramedDevice(denon, "{0}\r", true);

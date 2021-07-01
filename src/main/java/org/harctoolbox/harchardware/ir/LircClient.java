@@ -62,6 +62,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
     private static CommandLineArgs commandLineArgs = new CommandLineArgs();
 
     private static void usage(int exitcode) {
+        @SuppressWarnings("UseOfSystemOutOrSystemErr")
         PrintStream printStream = exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err;
         argumentParser.setConsole(new DefaultConsole(printStream));
         argumentParser.usage();
@@ -73,11 +74,13 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
         System.exit(exitcode);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void doExit(boolean success) {
         if (!success)
             System.err.println("Failed");
         System.exit(success ? IrpUtils.EXIT_SUCCESS : IrpUtils.EXIT_IO_ERROR);
     }
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void doExit(String message, int exitcode) {
         System.err.println(message);
         System.exit(exitcode);
@@ -86,6 +89,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
     /**
      * @param args the command line arguments.
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         argumentParser = new JCommander(commandLineArgs);
         argumentParser.setCaseSensitiveOptions(false);

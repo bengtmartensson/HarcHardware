@@ -49,6 +49,7 @@ public class IRrecvDumpV2NGTest {
      * @throws org.harctoolbox.ircore.OddSequenceLengthException
      */
     @Test
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void testParse() throws OddSequenceLengthException {
         System.out.println("parse");
         IrSequence result = IRrecvDumpV2.parse(expected);

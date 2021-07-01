@@ -111,6 +111,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         return (new EzControlT10(hostname)).getStatus();
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void usage() {
         System.err.println("Usage:\n" + "ezcontrol [<options>] get_status [<presetNumber>]\n"
                 + "or\n" + "ezcontrol [<options>] get_timer [<timername>]\n"
@@ -127,7 +128,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         System.exit(exitcode);
     }
 
-    @SuppressWarnings("ValueOfIncrementOrDecrementUsed")
+    @SuppressWarnings({"ValueOfIncrementOrDecrementUsed", "UseOfSystemOutOrSystemErr"})
     public static void main(String args[]) {
         boolean verbose = false;
         String ezcontrolHost = defaultEzcontrolIP;

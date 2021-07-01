@@ -24,6 +24,7 @@ import org.harctoolbox.harchardware.misc.SonySerialCommand; // just for main().
 
 public final class LocalSerialPortRaw extends LocalSerialPort implements IBytesCommand {
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         List<String> names;
         try {

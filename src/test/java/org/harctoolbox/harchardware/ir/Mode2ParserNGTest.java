@@ -14,6 +14,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class Mode2ParserNGTest {
 
     private static final String testString = "# comment\n\n"

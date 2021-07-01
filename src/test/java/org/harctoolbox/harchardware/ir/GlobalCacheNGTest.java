@@ -10,10 +10,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-/**
- *
- * @author bengt
- */
 public class GlobalCacheNGTest {
 
     @BeforeClass
@@ -40,6 +36,7 @@ public class GlobalCacheNGTest {
      * @throws org.harctoolbox.ircore.InvalidArgumentException
      */
     @Test
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void testParse() throws Pronto.NonProntoFormatException, InvalidArgumentException {
         System.out.println("parse");
         String gcString = "sendir,1:1,1,38381,1,69,347,173,22,22,22,22,22,65,22,65,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,22,22,22,22,65,22,65,22,65,22,22,22,22,22,22,22,65,22,65,22,1700,347,87,22,3692";

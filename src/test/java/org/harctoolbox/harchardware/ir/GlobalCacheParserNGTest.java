@@ -11,6 +11,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class GlobalCacheParserNGTest {
 
     private static final String sendir = "sendir,1:1,1,38400,1,69,347,173,22,22,22,22,22,65,22,65,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,22,22,22,22,65,22,65,22,65,22,22,22,22,22,22,22,65,22,65,22,1700,347,87,22,3692";

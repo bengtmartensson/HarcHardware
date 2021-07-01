@@ -27,6 +27,7 @@ import org.harctoolbox.ircore.IrCoreUtils;
 
 public final class LocalSerialPortBuffered extends LocalSerialPort implements ICommandLineDevice {
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         List<String> names;
         try (LocalSerialPortBuffered port = new LocalSerialPortBuffered("/dev/ttyS0", true, 10000, 9600, 8, StopBits.ONE, Parity.NONE, FlowControl.NONE)) {

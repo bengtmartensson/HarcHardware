@@ -43,6 +43,7 @@ public class Wol {
         (new Wol(wolee)).wol();
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             File ethersPath = null;

@@ -53,6 +53,7 @@ public class Ethers {
      * Command line interface to getMac.
      * @param args hostname to be resolved
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         if (args.length != 1) {
             System.err.println("Usage:\n\tethers host");
@@ -70,10 +71,8 @@ public class Ethers {
     }
 
     private final HashMap<String, String> table;
-    private final File file;
 
     public Ethers(File file) throws IOException {
-        this.file = file;
         table = new HashMap<>(64);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.defaultCharset()))) {
             while (true) {

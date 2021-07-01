@@ -38,6 +38,8 @@ import java.nio.charset.Charset;
  */
 public class UdpSocketChannel {
     private final static int BUFFERSIZE = 65000;
+
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             UdpSocketChannel ch = new UdpSocketChannel("irtrans", 21000, 2000, true);

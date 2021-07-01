@@ -59,7 +59,6 @@ public abstract class LocalSerialPort implements IHarcHardware {
     private static final String NRLIB_PROPERTY_NAME = "libNRJavaSerial.userlib";
     private static final String NRLIB_NAME = "NRJavaSerial";
     public static final String DEFAULT = "default";
-    private static final String DEV_PREFIX = "/dev/";
 
 //    private static File libraryDir = null;
 

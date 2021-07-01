@@ -94,6 +94,7 @@ public final class Main extends CmdLineProgram {
     }
 
     @Override
+    @SuppressWarnings("CallToPrintStackTrace")
     public ProgramExitStatus processCommand() {
         try {
             commandLineArgs.initialize();

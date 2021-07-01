@@ -51,6 +51,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     /** port number, not possible to change. */
     public final static int portNumber = 21000;
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void usage(int exitstatus) {
         System.err.println("Usage:");
         System.err.println("\tIrTrans [-v][-h <hostname>] -c [<Pronto Hex code>]");
@@ -61,6 +62,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
         System.exit(exitcode);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String args[]) {
         boolean verbose = false;
         String IrTransHost = DEFAULT_IP;

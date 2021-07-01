@@ -18,6 +18,7 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.beacon;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -74,7 +75,7 @@ public class AmxBeaconListener {
      * mainly for testing.
      * @param args
      */
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "UseOfSystemOutOrSystemErr"})
     public static void main(String args[]) {
         switch (args.length) {
             case 0:
@@ -84,10 +85,9 @@ public class AmxBeaconListener {
             case 3:
                 AmxBeaconListener ab = new AmxBeaconListener();
                 ab.start();
-                int n = 0;
                 while (true) {
                     System.out.println(new Date());
-                    ab.printNodes();
+                    ab.printNodes(System.out);
                     try {
                         Thread.sleep(Integer.parseInt(args[0]));
                     } catch (InterruptedException ex) {
@@ -152,10 +152,10 @@ public class AmxBeaconListener {
         listenThread.interrupt();
     }
 
-    private synchronized void printNodes() {
-        System.out.println(nodes.size());
+    private synchronized void printNodes(PrintStream stream) {
+        stream.println(nodes.size());
         nodes.keySet().forEach((addr) -> {
-            System.out.println(nodes.get(addr));
+            stream.println(nodes.get(addr));
         });
     }
 
@@ -368,6 +368,7 @@ public class AmxBeaconListener {
     private static class PrintCallback implements Callback {
 
         @Override
+        @SuppressWarnings("UseOfSystemOutOrSystemErr")
         public void func(Map<InetAddress, Node> nodes) {
             nodes.values().forEach((node) -> {
                 System.out.println(node);

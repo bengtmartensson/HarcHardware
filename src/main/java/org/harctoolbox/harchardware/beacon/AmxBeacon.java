@@ -58,6 +58,7 @@ public class AmxBeacon {
      * Fires up a test instance.
      * @param args not necessary, nor evaluated. Runs until stopped from external source.
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             String hostname = Utils.getHostname();

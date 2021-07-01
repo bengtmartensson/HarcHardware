@@ -54,6 +54,8 @@ public class SonySerialCommand {
             return null;
         return new Command(ssc);
     }
+
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         boolean useGlobalCache = true;
         @SuppressWarnings("UnusedAssignment")

@@ -80,6 +80,7 @@ public class CommandCapture extends AbstractCommand {
         return "This command captures a command from the selected hardware, using a non-demodulating sensor.";
     }
 
+    @SuppressWarnings("null")
     public boolean collect(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, HarcHardwareException, InvalidArgumentException, IOException, IrpParseException, UnknownProtocolException, SAXException {
         commandLineArgs.assertNonNullClass();
         commandLineArgs.setupTimeouts((IIrReader) hardware);

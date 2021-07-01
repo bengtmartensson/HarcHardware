@@ -203,6 +203,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return new IrSignal(durations, repIndex - 1, durations.length - repIndex + 1, frequency);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void usage() {
         System.err.println("Usagex:");
         System.err.println("GlobalCache [options] <command> [<argument>]");
@@ -216,6 +217,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     // Probably not entirely working...
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) throws InvalidArgumentException {
         //String str = "sendir,4:1,0,38380,1,69,347,173,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,1527,347,87,22,3692";
         String hostname = DEFAULT_IP;

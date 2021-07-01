@@ -27,6 +27,7 @@ public class UrlPort implements ICommandLineDevice {
     /**
      * @param args the command line arguments
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
 
         UrlPort port = new UrlPort("http", "t10", -1, "/preset?switch=", "&value=ON", 2000, true);
