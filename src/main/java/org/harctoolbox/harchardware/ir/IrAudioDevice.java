@@ -106,7 +106,7 @@ public class IrAudioDevice implements IHarcHardware, IRawIrSender {
     }
 
     @Override
-    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IOException, HarcHardwareException, InvalidArgumentException {
+    public boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws InvalidArgumentException, IOException, HarcHardwareException {
         ModulatedIrSequence seq = irSignal.toModulatedIrSequence(count);
         Wave wave = new Wave(seq, sampleFrequency, sampleSize, channels, bigEndian, omitTail, square, divide);
         try {

@@ -57,6 +57,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private static final String SET_PARAMETER_COMMAND = "parameter";
     private static final String CAPTURE_MODULENAME = "capture";
     private static final String PARAMETERS_MODULENAME = "parameters";
+    private static final String TRANSMIT_MODULENAME = "transmit";
     private static final String BEGIN_TIMEOUT_PARAMETER_NAME = "beginTimeout";
     private static final String ENDING_CAPTURE_TIMEOUT_PARAMETER_NAME = "captureendingTimeout";
     private static final String ENDING_RECEIVE_TIMEOUT_PARAMETER_NAME = "receiveendingTimeout";
@@ -67,8 +68,9 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private static final String TIMEOUT_STRING = ".";
     private static final String SEPARATOR = " ";
 
-    private static final int DEFAULT_BAUD = 115200;
-    private static final int DEFAULT_PORT = 33333;
+    public static final int DEFAULT_BAUD = 115200;
+    public static final int DEFAULT_PORT = 33333;
+
     private static final String DEFAULT_PORTNAME = "arduino";
 
     public static GirsClient<TcpSocketPort> newInstance(InetAddress inetAddress, Integer portnumber, boolean verbose, Integer timeout) throws UnknownHostException, HarcHardwareException, IOException {
@@ -228,6 +230,10 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     public boolean hasCaptureModule() {
         return modules.contains(CAPTURE_MODULENAME);
+    }
+
+    public boolean hasTransmitModule() {
+        return modules.contains(TRANSMIT_MODULENAME);
     }
 
     /**

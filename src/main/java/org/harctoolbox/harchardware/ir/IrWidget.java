@@ -53,6 +53,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     /** Number of micro seconds in a count. */
     public static final int MICROS_PER_TICK = 100;
     public static final String DEFAULT_PORTNAME = "/dev/ttyUSB0";
+    public static final String IRWIDGET = "IrWidget";
     private static final int BAUDRATE = 115200;
     private static final int MASK = 0x3F;
     private static final int SHORT_DELAY = 20;

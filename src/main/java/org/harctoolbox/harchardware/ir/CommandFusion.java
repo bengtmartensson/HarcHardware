@@ -81,6 +81,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     public static final String DEFAULTPORTNAME = "ftdi";///dev/ttyUSB0";
     public static final int DEFAULTBAUDRATE = 115200;
     public static final int DEFAULT_TIMEOUT = 10000;
+    public static final String COMMAND_FUSION = "Command Fusion";
     private static final int DATASIZE = 8;
     private static final LocalSerialPort.StopBits STOPBITS = LocalSerialPort.StopBits.ONE;
     private static final LocalSerialPort.Parity PARITY = LocalSerialPort.Parity.NONE;

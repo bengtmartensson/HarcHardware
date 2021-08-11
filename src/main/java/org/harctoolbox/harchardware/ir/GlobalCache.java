@@ -931,7 +931,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
-    public synchronized ModulatedIrSequence capture() throws HarcHardwareException, InvalidArgumentException {
+    public synchronized ModulatedIrSequence capture() throws InvalidArgumentException {
         try {
             String[] result = sendCommand("get_IRL", 1, smallDelay, null);
             if (result[0].equals("IR Learner Enabled"))
