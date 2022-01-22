@@ -152,13 +152,11 @@ public class CommandCommonOptions extends CommandDecodeParameterOptions {
             return false;
 
         if (!quiet)
-            out.print("Serial ports:");
+            out.println("Serial ports:");
         List<String> ports = LocalSerialPort.getSerialPortNames(false);
         ports.stream().forEachOrdered((port) -> {
-            out.print(" ");
-            out.print(port);
+            out.println(port);
         });
-        out.println();
         return true;
     }
 
