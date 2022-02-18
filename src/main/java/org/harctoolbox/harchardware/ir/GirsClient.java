@@ -67,6 +67,8 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private static final String ERROR_STRING = "ERROR";
     private static final String TIMEOUT_STRING = ".";
     private static final String SEPARATOR = " ";
+    private static final int GIRS_SELFTEST_TIME = 2000;
+    private static final int GIRS_R_U_THERE_TRIES = 3;
 
     public static final int DEFAULT_BAUD = 115200;
     public static final int DEFAULT_PORT = 33333;
@@ -260,7 +262,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     @Override
     public void open() throws IOException, HarcHardwareException {
         hardware.open();
-        waitFor(OK_STRING, lineEnding, /*delay*/ 100, /* tries = */ 3);
+        waitFor(OK_STRING, lineEnding, /*delay*/ GIRS_SELFTEST_TIME, /* tries = */ GIRS_R_U_THERE_TRIES);
         hardware.sendString(VERSION_COMMAND + lineEnding);
         version = hardware.readString(true).trim();
         if (verbose)
