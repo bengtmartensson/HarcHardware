@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="US-ASCII"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -298,7 +298,7 @@
         <dependency>
             <groupId>org.harctoolbox</groupId>
             <artifactId>IrpTransmogrifier</artifactId>
-            <version>1.2.11-SNAPSHOT</version>
+            <version>1.2.11</version>
         </dependency>
         <dependency>
             <groupId>com.eclipsesource.minimal-json</groupId>
