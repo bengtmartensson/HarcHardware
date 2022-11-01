@@ -73,6 +73,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     private int beginTimeout;
     private int captureMaxSize;
     private int endingTimeout;
+    private boolean lowerDtrRts = false;
 
      /**
      * Constructs new IrWidget with default port name and timeouts.
@@ -161,20 +162,22 @@ public class IrWidget implements IHarcHardware, ICapture {
     }
 
     private void enableIrWidgetMode() {
-        try {
-            serialPort.setDTR(false);
-            serialPort.setRTS(false);
-            Thread.sleep(SHORT_DELAY); // ???
-            serialPort.setDTR(true);
-            Thread.sleep(LONG_DELAY);
-            serialPort.setRTS(true);
-        } catch (InterruptedException ex) {
-            throw new ThisCannotHappenException(ex);
+        if (lowerDtrRts) {
+            try {
+                serialPort.setDTR(false);
+                serialPort.setRTS(false);
+                Thread.sleep(SHORT_DELAY); // ???
+                serialPort.setDTR(true);
+                Thread.sleep(LONG_DELAY);
+                serialPort.setRTS(true);
+            } catch (InterruptedException ex) {
+                throw new ThisCannotHappenException(ex);
+            }
         }
     }
 
     private void disableIrWidgetMode() {
-        if (serialPort != null) {
+        if (serialPort != null && lowerDtrRts) {
             serialPort.setDTR(false);
             serialPort.setRTS(false);
         }
