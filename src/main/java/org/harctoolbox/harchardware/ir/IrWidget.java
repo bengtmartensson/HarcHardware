@@ -225,63 +225,63 @@ public class IrWidget implements IHarcHardware, ICapture {
         //serialPort.enableReceiveTimeout(beginTimeout);
 
         try {
-            int maxToRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / MICROS_PER_TICK);
-            data = new byte[maxToRead];
+            while (true) {
+                int maxToRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / MICROS_PER_TICK);
+                data = new byte[maxToRead];
 
-            int readByte = inputStream.read(); // blocks. If IOException we really have a problem, so don't catch it
-            if (readByte == INVALID) { // timeout
-                if (verbose)
-                    System.err.println("TIMEOUT");
-                return null;
-            }
-            data[0] = (byte) readByte;
-
-            byte last = (byte) INVALID;
-            long startTime = System.currentTimeMillis();
-            long lastEvent = startTime;
-            stopRequested = false;
-            int bytesRead = 1;
-
-            // Runs in spin-wait, but only when really capturing
-            while (bytesRead < maxToRead && !stopRequested) {
-                if (inputStream.available() == 0) {
-                    if (EMERGENCY_TIMEOUT > 0 && System.currentTimeMillis() - lastEvent >= EMERGENCY_TIMEOUT)
-                        break;
-
-                    continue;
-                }
-                int noRead = inputStream.read(data, bytesRead, maxToRead - bytesRead);
-                bytesRead += noRead;
-                int i = 0;
-                while (i < noRead && data[bytesRead - noRead + i] == last) {
-                    i++;
-                }
-
-                if (i == noRead) {
-                    // no new information has arrived
-                    if (System.currentTimeMillis() - lastEvent >= endingTimeout)
-                        break;
-                } else {
-                    // something happened
-                    lastEvent = System.currentTimeMillis();
-                }
-
-                last = data[bytesRead - 1];
-            }
-            boolean success = compute(bytesRead);
-            if (success)
-                try {
-                    ModulatedIrSequence modulatedIrSequence = new ModulatedIrSequence(new IrSequence(times), frequency, null);
+                int readByte = inputStream.read(); // blocks. If IOException we really have a problem, so don't catch it
+                if (readByte == INVALID) { // timeout
                     if (verbose)
-                        System.err.println("<Received: " + modulatedIrSequence.toString(true));
-                    return modulatedIrSequence;
-                } catch (OddSequenceLengthException ex) {
-                    throw new ThisCannotHappenException(ex);
+                        System.err.println("TIMEOUT");
+                    return null;
                 }
-            else {
-                if (verbose)
-                    System.err.println("FAIL");
-                return null;
+                data[0] = (byte) readByte;
+
+                byte last = (byte) INVALID;
+                long startTime = System.currentTimeMillis();
+                long lastEvent = startTime;
+                stopRequested = false;
+                int bytesRead = 1;
+
+                // Runs in spin-wait, but only when really capturing
+                while (bytesRead < maxToRead && !stopRequested) {
+                    if (inputStream.available() == 0) {
+                        if (EMERGENCY_TIMEOUT > 0 && System.currentTimeMillis() - lastEvent >= EMERGENCY_TIMEOUT)
+                            break;
+
+                        continue;
+                    }
+                    int noRead = inputStream.read(data, bytesRead, maxToRead - bytesRead);
+                    bytesRead += noRead;
+                    int i = 0;
+                    while (i < noRead && data[bytesRead - noRead + i] == last) {
+                        i++;
+                    }
+
+                    if (i == noRead) {
+                        // no new information has arrived
+                        if (System.currentTimeMillis() - lastEvent >= endingTimeout)
+                            break;
+                    } else {
+                        // something happened
+                        lastEvent = System.currentTimeMillis();
+                    }
+
+                    last = data[bytesRead - 1];
+                }
+                boolean success = compute(bytesRead);
+                if (success) {
+                    try {
+                        ModulatedIrSequence modulatedIrSequence = new ModulatedIrSequence(new IrSequence(times), frequency, null);
+                        if (verbose)
+                            System.err.println("<Received: " + modulatedIrSequence.toString(true));
+                        return modulatedIrSequence;
+                    } catch (OddSequenceLengthException ex) {
+                        throw new ThisCannotHappenException(ex);
+                    }
+                } else
+                    // useless data received, make another attempt
+                    ;
             }
         } finally {
             disableIrWidgetMode();
