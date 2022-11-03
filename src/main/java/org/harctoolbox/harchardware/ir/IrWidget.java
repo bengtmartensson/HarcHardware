@@ -73,7 +73,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     private int beginTimeout;
     private int captureMaxSize;
     private int endingTimeout;
-    private boolean lowerDtrRts = false;
+    private final boolean lowerDtrRts;
 
      /**
      * Constructs new IrWidget with default port name and timeouts.
@@ -82,11 +82,11 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
     public IrWidget() throws IOException, NonExistingPortException {
-        this(null, false, null);
+        this(null, false, null, true);
     }
 
     public IrWidget(String portName) throws IOException, NonExistingPortException {
-        this(portName, false, null);
+        this(portName, false, null, true);
     }
 
     /**
@@ -98,8 +98,8 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @throws java.io.IOException
      * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
-    public IrWidget(String portName, boolean verbose, Integer timeout) throws IOException, NonExistingPortException {
-        this(portName, verbose, timeout, null, null);
+    public IrWidget(String portName, boolean verbose, Integer timeout, boolean lowerDtrRts) throws IOException, NonExistingPortException {
+        this(portName, verbose, timeout, null, null, lowerDtrRts);
     }
 
     /**
@@ -109,15 +109,17 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @param captureMaxSize
      * @param verbose
      * @param endingTimeout
+     * @param lowerDtrRts
      * @throws java.io.IOException
      * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
-    public IrWidget(String portName, boolean verbose, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout) throws IOException, NonExistingPortException {
+    public IrWidget(String portName, boolean verbose, Integer beginTimeout, Integer captureMaxSize, Integer endingTimeout, boolean lowerDtrRts) throws IOException, NonExistingPortException {
         this.debug = 0;
         this.verbose = verbose;
         this.beginTimeout = beginTimeout != null ? beginTimeout : DEFAULT_BEGIN_TIMEOUT;
         this.captureMaxSize = captureMaxSize != null ? captureMaxSize : DEFAULT_CAPTURE_MAXSIZE;
         this.endingTimeout = endingTimeout != null ? endingTimeout : DEFAULT_ENDING_TIMEOUT;
+        this.lowerDtrRts = lowerDtrRts;
         String realPortName = LocalSerialPort.canonicalizePortName(portName, DEFAULT_PORTNAME);
         try {
             portIdentifier = CommPortIdentifier.getPortIdentifier(realPortName);
