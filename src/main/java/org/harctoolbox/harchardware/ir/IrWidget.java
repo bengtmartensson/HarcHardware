@@ -60,6 +60,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     private static final int LONG_DELAY = 100; // was 100, 200 by Kevin
     private static final int INVALID = -1;
     private static final int EMERGENCY_TIMEOUT = 10000;
+    private final static int ESTIMATED_TICKS_PER_PULSE = 100;
 
     private final CommPortIdentifier portIdentifier;
     private RXTXPort serialPort;
@@ -86,7 +87,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     }
 
     public IrWidget(String portName) throws IOException, NonExistingPortException {
-        this(portName, false, null, true);
+        this(portName, false, null, null, null, true);
     }
 
     /**
@@ -227,7 +228,7 @@ public class IrWidget implements IHarcHardware, ICapture {
 
         try {
             while (true) {
-                int maxToRead = (int) Math.round(IrCoreUtils.milliseconds2microseconds(captureMaxSize) / MICROS_PER_TICK);
+                int maxToRead = captureMaxSize * ESTIMATED_TICKS_PER_PULSE;
                 data = new byte[maxToRead];
 
                 int readByte = inputStream.read(); // blocks. If IOException we really have a problem, so don't catch it
