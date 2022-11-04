@@ -82,7 +82,7 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
     public IrWidget() throws IOException, NonExistingPortException {
-        this(null, false, null, true);
+        this(null);
     }
 
     public IrWidget(String portName) throws IOException, NonExistingPortException {
@@ -157,32 +157,30 @@ public class IrWidget implements IHarcHardware, ICapture {
 
     @Override
     public void close() throws IOException {
-        disableIrWidgetMode();
-        if (serialPort != null)
+        if (serialPort != null) {
+            if (lowerDtrRts)
+                disableIrWidgetMode();
             serialPort.close();
-        serialPort = null;
+            serialPort = null;
+        }
     }
 
     private void enableIrWidgetMode() {
-        if (lowerDtrRts) {
-            try {
-                serialPort.setDTR(false);
-                serialPort.setRTS(false);
-                Thread.sleep(SHORT_DELAY); // ???
-                serialPort.setDTR(true);
-                Thread.sleep(LONG_DELAY);
-                serialPort.setRTS(true);
-            } catch (InterruptedException ex) {
-                throw new ThisCannotHappenException(ex);
-            }
+        try {
+            serialPort.setDTR(false);
+            serialPort.setRTS(false);
+            Thread.sleep(SHORT_DELAY); // ???
+            serialPort.setDTR(true);
+            Thread.sleep(LONG_DELAY);
+            serialPort.setRTS(true);
+        } catch (InterruptedException ex) {
+            throw new ThisCannotHappenException(ex);
         }
     }
 
     private void disableIrWidgetMode() {
-        if (serialPort != null && lowerDtrRts) {
-            serialPort.setDTR(false);
-            serialPort.setRTS(false);
-        }
+        serialPort.setDTR(false);
+        serialPort.setRTS(false);
     }
 
     /**
@@ -217,7 +215,8 @@ public class IrWidget implements IHarcHardware, ICapture {
      */
     @Override
     public ModulatedIrSequence capture() throws IOException {
-        enableIrWidgetMode();
+        if (lowerDtrRts)
+            enableIrWidgetMode();
         InputStream inputStream = serialPort.getInputStream();
         try {
             serialPort.clearCommInput();
@@ -286,7 +285,8 @@ public class IrWidget implements IHarcHardware, ICapture {
                     ;
             }
         } finally {
-            disableIrWidgetMode();
+            if (serialPort != null && lowerDtrRts)
+                disableIrWidgetMode();
             inputStream.close();
         }
     }
