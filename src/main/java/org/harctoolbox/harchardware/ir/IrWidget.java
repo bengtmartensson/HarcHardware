@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2013, 2014, 2020 Bengt Martensson.
+Copyright (C) 2013, 2014, 2020, 2022 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -106,9 +106,9 @@ public class IrWidget implements IHarcHardware, ICapture {
     /**
      * Constructs new IrWidget.
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
+     * @param verbose
      * @param beginTimeout
      * @param captureMaxSize
-     * @param verbose
      * @param endingTimeout
      * @param lowerDtrRts
      * @throws java.io.IOException
@@ -138,7 +138,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     @Override
     public void open() throws HarcHardwareException, IOException {
         try {
-           serialPort = portIdentifier.open(getClass().getName(), DEFAULT_BEGIN_TIMEOUT);
+           serialPort = portIdentifier.open(getClass().getName(), beginTimeout);
         } catch (PortInUseException ex) {
             throw new HarcHardwareException(ex);
         }
@@ -149,10 +149,7 @@ public class IrWidget implements IHarcHardware, ICapture {
             throw new HarcHardwareException(ex);
         }
         serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
-
         serialPort.disableReceiveThreshold();
-        //serialPort.disableReceiveFraming();
-        //serialPort.enableReceiveThreshold(0);
         serialPort.enableReceiveTimeout(beginTimeout);
     }
 
@@ -170,7 +167,7 @@ public class IrWidget implements IHarcHardware, ICapture {
         try {
             serialPort.setDTR(false);
             serialPort.setRTS(false);
-            Thread.sleep(SHORT_DELAY); // ???
+            Thread.sleep(SHORT_DELAY);
             serialPort.setDTR(true);
             Thread.sleep(LONG_DELAY);
             serialPort.setRTS(true);
