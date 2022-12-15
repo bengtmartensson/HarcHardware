@@ -127,6 +127,7 @@ public final class Main extends CmdLineProgram {
             boolean success = true;
             switch (command) {
                 case "transmit":
+                case "send":
                     success = commandTransmit.transmit(out, commandLineArgs, hardware);
                     break;
                 case "capture":
