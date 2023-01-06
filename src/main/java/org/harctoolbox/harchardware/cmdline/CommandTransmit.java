@@ -79,10 +79,12 @@ public class CommandTransmit extends AbstractCommand {
     @Parameter(description = "remaining arguments")
     private List<String> args = new ArrayList<>(8);
 
+    private Transmitter trnsmttr;
+
     @Override
     public String description() {
         return "This command sends an IR signal to the selected hardware. The IR signal can be either a named command "
-                + "(using the --remote and --command options), "
+                + "(using the --remote and --command options -- assuming it is known by the hardware), "
                 + "a rendered signal (using the --nameengine and --protocol options), "
                 + "or a raw signal in Pronto Hex- or raw format.";
     }
@@ -97,29 +99,29 @@ public class CommandTransmit extends AbstractCommand {
                 out.println(trnsmit);
             return true;
         }
-        Transmitter tr = transmitter != null ? ((ITransmitter) hardware).getTransmitter(transmitter) : null;
+        trnsmttr = transmitter != null ? ((ITransmitter) hardware).getTransmitter(transmitter) : null;
 
         boolean status;
         if ((remote != null) != (command != null))
             throw new UsageException("--remote and --command must be given together");
         else if (remote != null)
-            status = transmitNamedCommand(hardware, tr);
+            status = transmitNamedCommand(hardware);
         else if (protocol != null != (nameEngine != null))
             throw new UsageException("--protocol and --names must be given together");
         else if (protocol != null)
-            status = transmitRender(commandLineArgs, hardware, tr);
+            status = transmitRender(commandLineArgs, hardware);
         else
-            status = transmitRaw(hardware, tr);
+            status = transmitRaw(hardware);
         logger.log(Level.INFO, "Sending {0}.", status ? "succeded" : "failed");
         return status;
     }
 
-    private boolean transmitNamedCommand(IHarcHardware hardware, Transmitter tr) throws IOException, NoSuchTransmitterException {
+    private boolean transmitNamedCommand(IHarcHardware hardware) throws IOException, NoSuchTransmitterException {
         IRemoteCommandIrSender namedCommandSender = (IRemoteCommandIrSender) hardware;
-        return namedCommandSender.sendIrCommand(remote, command, count, tr);
+        return namedCommandSender.sendIrCommand(remote, command, count, trnsmttr);
     }
 
-    private boolean transmitRaw(IHarcHardware hardware, Transmitter tr) throws InvalidArgumentException, UsageException, HarcHardwareException, NoSuchTransmitterException, IOException {
+    private boolean transmitRaw(IHarcHardware hardware) throws InvalidArgumentException, UsageException, HarcHardwareException, NoSuchTransmitterException, IOException {
         MultiParser prontoRawParser = MultiParser.newIrCoreParser(args);
         IrSignal irSignal = prontoRawParser.toIrSignal(frequency, trailingGap);
         if (irSignal == null) {
@@ -130,17 +132,17 @@ public class CommandTransmit extends AbstractCommand {
             logger.log(Level.WARNING, "No signal given");
             return false;
         }
-        return sendRaw(hardware, tr, irSignal);
+        return sendRaw(hardware, irSignal);
     }
 
-    private boolean transmitRender(CommandCommonOptions commandLineArgs, IHarcHardware hardware, Transmitter tr) throws UsageException, IrpParseException, IOException, UnknownProtocolException, IrpException, HarcHardwareException, NoSuchTransmitterException, InvalidArgumentException, SAXException {
+    private boolean transmitRender(CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, IrpParseException, IOException, UnknownProtocolException, IrpException, HarcHardwareException, NoSuchTransmitterException, InvalidArgumentException, SAXException {
         IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
         IrSignal irSignal = irpDatabase.render(protocol, nameEngine.toMap());
-        return sendRaw(hardware, tr, irSignal);
+        return sendRaw(hardware, irSignal);
     }
 
-    private boolean sendRaw(IHarcHardware hardware, Transmitter tr, IrSignal irSignal) throws HarcHardwareException, NoSuchTransmitterException, IOException, InvalidArgumentException {
+    private boolean sendRaw(IHarcHardware hardware, IrSignal irSignal) throws HarcHardwareException, NoSuchTransmitterException, IOException, InvalidArgumentException {
         IRawIrSender hw = (IRawIrSender) hardware;
-        return hw.sendIr(irSignal, count, tr);
+        return hw.sendIr(irSignal, count, trnsmttr);
     }
 }
