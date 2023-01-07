@@ -17,8 +17,11 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.cmdline;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -36,6 +39,7 @@ import org.harctoolbox.harchardware.ir.ITransmitter;
 import org.harctoolbox.harchardware.ir.NoSuchTransmitterException;
 import org.harctoolbox.harchardware.ir.Transmitter;
 import org.harctoolbox.ircore.InvalidArgumentException;
+import static org.harctoolbox.ircore.IrCoreUtils.WHITESPACE;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.MultiParser;
 import org.harctoolbox.irp.IrpDatabase;
@@ -54,11 +58,21 @@ public class CommandTransmit extends AbstractCommand {
 
     private static final Double trailingGap = 10000.0;
 
+    // This is static for performance reasons only; pretty expensive to set up.
+    private static IrpDatabase irpDatabase = null;
+    private static void setupIrpDatabaseUnlessDone(CommandCommonOptions commandLineArgs) throws UsageException, IrpParseException, IOException, UnknownProtocolException, SAXException {
+        if (irpDatabase == null)
+            irpDatabase = commandLineArgs.setupDatabase();
+    }
+
     @Parameter(names = {"-#", "--count"}, description = "Number of times to send sequence")
     private int count = 1;
 
     @Parameter(names = {"-c", "--command"}, description = "Name of command (residing in the named remote) to send.")
     private String command = null;
+
+    @Parameter(names = {"-F", "--file"}, description = "File name of file containing arguments; one send per line")
+    private String file = null;
 
     @Parameter(names = {"-f", "--frequency"}, description = "Frequency in Hz, for use with raw signals")
     private Double frequency = null;
@@ -92,6 +106,13 @@ public class CommandTransmit extends AbstractCommand {
     public boolean transmit(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware)
             throws IOException, NoSuchTransmitterException, InvalidArgumentException, UsageException, HarcHardwareException, IrpParseException, UnknownProtocolException, IrpException, SAXException {
         commandLineArgs.assertNonNullClass();
+
+        if (file != null) {
+            if (remote != null || command != null || protocol != null || nameEngine != null || args.size() > 0)
+                throw new UsageException("--file cannot be combined with any other option");
+            return parseFile(out, commandLineArgs, hardware);
+        }
+
         if (transmitter != null && transmitter.equals("?")) {
             ITransmitter hw = (ITransmitter) hardware;
             String[] transmitters = hw.getTransmitterNames();
@@ -116,6 +137,37 @@ public class CommandTransmit extends AbstractCommand {
         return status;
     }
 
+    @SuppressWarnings("SleepWhileInLoop")
+    private boolean parseFile(PrintStream out, CommandCommonOptions commandLineArgs, IHarcHardware hardware)
+            throws IOException, InvalidArgumentException, UsageException, HarcHardwareException, SAXException, IrpException, IrpParseException {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+            while (true) {
+                String line = bufferedReader.readLine();
+                if (line == null)
+                    return true;
+                line = line.trim();
+                if (line.startsWith("#") || line.isEmpty())
+                    continue;
+                if (line.startsWith("delay")) {
+                    String[] arr = line.split(WHITESPACE);
+                    long millis = Long.parseLong(arr[1]);
+                    try {
+                        Thread.sleep(millis);
+                    } catch (InterruptedException ex) {
+                    }
+                    continue;
+                }
+                CommandTransmit commandTransmit = new CommandTransmit();
+                JCommander jCommander = new JCommander(commandTransmit);
+                jCommander.parse(line.split(WHITESPACE));
+                boolean success = commandTransmit.transmit(out, commandLineArgs, hardware);
+                if (!success)
+                    return false;
+            }
+        }
+        // Never gets here
+    }
+
     private boolean transmitNamedCommand(IHarcHardware hardware) throws IOException, NoSuchTransmitterException {
         IRemoteCommandIrSender namedCommandSender = (IRemoteCommandIrSender) hardware;
         return namedCommandSender.sendIrCommand(remote, command, count, trnsmttr);
@@ -136,7 +188,7 @@ public class CommandTransmit extends AbstractCommand {
     }
 
     private boolean transmitRender(CommandCommonOptions commandLineArgs, IHarcHardware hardware) throws UsageException, IrpParseException, IOException, UnknownProtocolException, IrpException, HarcHardwareException, NoSuchTransmitterException, InvalidArgumentException, SAXException {
-        IrpDatabase irpDatabase = commandLineArgs.setupDatabase();
+        setupIrpDatabaseUnlessDone(commandLineArgs);
         IrSignal irSignal = irpDatabase.render(protocol, nameEngine.toMap());
         return sendRaw(hardware, irSignal);
     }
