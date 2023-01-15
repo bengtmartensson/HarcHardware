@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2022 Bengt Martensson.
+Copyright (C) 2023 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,19 +22,23 @@ package org.harctoolbox.harchardware.ir;
  */
 final public class BroadlinkHexParser extends BroadlinkParser {
 
-    public BroadlinkHexParser(String str) {
-        super(str);
+    private static byte[] digest(String str) {
+        try {
+            int length = str.length() / 2;
+            byte[] array = new byte[length];
+            for (int i = 0; i < length; i++) {
+                String s = str.substring(2 * i, 2 * i + 2);
+                int x = Integer.parseInt(s, 16);
+                array[i] = (byte) x;
+            }
+            return array;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
-    @Override
-    void setup() {
-        int length = getSource().length() / 2;
-        data = new byte[length];
-        for (int i = 0; i < length; i++) {
-            String s = getSource().substring(2 * i, 2 * i + 2);
-            int x = Integer.parseInt(s, 16);
-            data[i] = (byte) x;
-        }
+    public BroadlinkHexParser(String str) {
+        super(digest(str));
     }
 
     @Override

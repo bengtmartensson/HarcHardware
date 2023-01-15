@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2022 Bengt Martensson.
+Copyright (C) 2023 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,8 +21,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static org.harctoolbox.harchardware.ir.Broadlink.A_PRIOR_MODULATION_FREQUENCY;
+import static org.harctoolbox.harchardware.ir.Broadlink.DURATIONS_OFFSET;
+import static org.harctoolbox.harchardware.ir.Broadlink.IR_ENDING_TOKEN;
+import static org.harctoolbox.harchardware.ir.Broadlink.IR_TOKEN;
+import static org.harctoolbox.harchardware.ir.Broadlink.LENGTH_LSB_POS;
+import static org.harctoolbox.harchardware.ir.Broadlink.LENGTH_MSB_POS;
+import static org.harctoolbox.harchardware.ir.Broadlink.REPEAT_POS;
+import static org.harctoolbox.harchardware.ir.Broadlink.TICK;
+import static org.harctoolbox.harchardware.ir.Broadlink.TOKEN_POS;
 import org.harctoolbox.ircore.AbstractIrParser;
 import org.harctoolbox.ircore.InvalidArgumentException;
+import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.IrSignalParser;
 import org.harctoolbox.ircore.OddSequenceLengthException;
@@ -30,56 +40,93 @@ import org.harctoolbox.ircore.OddSequenceLengthException;
 /**
  *
  */
-public abstract class BroadlinkParser extends AbstractIrParser implements IrSignalParser {
+public class BroadlinkParser extends AbstractIrParser implements IrSignalParser {
+
     private final static Logger logger = Logger.getLogger(BroadlinkParser.class.getName());
 
-    private final static double TICK = 32.84d;
-    private final static int IR_TOKEN = 0x26;
-    private final static int ENDING_TOKEN = 0x0d05;
+    public static BroadlinkParser newParser(String str) {
+        BroadlinkParser parser = str.startsWith(Integer.toHexString(IR_TOKEN)) ? new BroadlinkHexParser(str) : new BroadlinkBase64Parser(str);
+        return parser;
+    }
+
+    public static IrSequence parse(String str) throws InvalidArgumentException {
+        BroadlinkParser parser = str.startsWith(Integer.toHexString(IR_TOKEN)) ? new BroadlinkHexParser(str) : new BroadlinkBase64Parser(str);
+        return parser.toIrSequence();
+    }
+
+    public static IrSequence parse(byte[] data) throws InvalidArgumentException {
+        BroadlinkParser parser = new BroadlinkParser(data);
+        return parser.toIrSequence();
+    }
+
+    @SuppressWarnings({"UseOfSystemOutOrSystemErr", "CallToPrintStackTrace"})
+    public static void main(String[] args) {
+        try {
+            IrSequence irSequence = parse(args[0]);
+            System.out.println(irSequence);
+        } catch (InvalidArgumentException ex) {
+            ex.printStackTrace();
+        }
+    }
 
     protected byte[] data;
 
-    protected BroadlinkParser(String string) {
-        super(string);
+    protected BroadlinkParser(byte[] data) {
+        super("");
+        this.data = data;
     }
 
     @Override
-    public IrSignal toIrSignal(Double fallbackFrequency, Double dummyGap) throws OddSequenceLengthException, InvalidArgumentException, NumberFormatException {
-        try {
-            setup();
-        } catch (IllegalArgumentException ex) {
-            logger.log(Level.FINER, "Invalid Base64 data: {0}", getSource());
+    public IrSequence toIrSequence(Double dummyGap) throws OddSequenceLengthException {
+        if (this.data == null)
             return null;
-        }
-        int length = data.length;
-        List<Integer> durations = new ArrayList<>(length);
-        int prefix = readdata(0);
+        int prefix = readdata(TOKEN_POS);
         if (prefix != IR_TOKEN) {
             logger.log(Level.FINER, "IR signal did not start with 0x{0}", Integer.toHexString(IR_TOKEN));
             return null;
         }
+        int repeats = readdata(REPEAT_POS);
+        int length = 256 * readdata(LENGTH_MSB_POS) + readdata(LENGTH_LSB_POS);
+        List<Integer> durations = new ArrayList<>(length);
 
-        int index = 4;
-        while (index < data.length) {
-            int chunk = readdata(index);
-            index++;
-            if (chunk == 0) {
-                chunk = readdata(index);
-                chunk = 256 * chunk + readdata(index + 1);
-                index += 2;
+        try {
+            int readIndex = DURATIONS_OFFSET;
+            while (true) {
+                int chunk = readdata(readIndex);
+                readIndex++;
+                if (chunk == 0) {
+                    chunk = 256 * readdata(readIndex) + readdata(readIndex + 1);
+                    readIndex += 2;
+                    durations.add((int) Math.round(chunk * TICK));
+                    if (chunk == IR_ENDING_TOKEN)
+                        break;
+                } else
+                    durations.add((int) Math.round(chunk * TICK));
             }
-            durations.add((int) Math.round(chunk * TICK));
-            if (chunk == ENDING_TOKEN)
-                break;
+        } catch (IndexOutOfBoundsException ex) {
+            logger.log(Level.FINER, "IR data inconsistent");
+            return null;
         }
-        int[] array = durations.stream().mapToInt(Integer::intValue).toArray();
-        return new IrSignal(array, durations.size(), 0, fallbackFrequency);
+
+        IrSequence irSequence = new IrSequence(durations);
+        if (repeats > 0)
+            irSequence.append(irSequence, repeats);
+        return irSequence;
     }
 
-    private int readdata(int i) {
+    @Override
+    public IrSignal toIrSignal(Double fallbackFrequency, Double dummyGap) throws OddSequenceLengthException {
+        IrSequence irSequence = toIrSequence(dummyGap);
+        return irSequence != null ? new IrSignal(irSequence, A_PRIOR_MODULATION_FREQUENCY, null) : null;
+    }
+
+    private int readdata(int i) throws IndexOutOfBoundsException {
         byte d = data[i];
-        return d >= 0 ? d : d + 256;
+        return Byte.toUnsignedInt(d);
     }
 
-    abstract void setup();
+    @Override
+    public String getName() {
+        return "Broadlink";
+    }
 }

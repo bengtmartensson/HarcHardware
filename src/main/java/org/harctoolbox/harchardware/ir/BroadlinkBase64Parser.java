@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2022 Bengt Martensson.
+Copyright (C) 2023 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,24 +18,32 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.util.Base64;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  */
 final public class BroadlinkBase64Parser extends BroadlinkParser {
 
+    private final static Logger logger = Logger.getLogger(BroadlinkBase64Parser.class.getName());
+
     private static String nukeTrailingEquals(String string) {
         int idx = string.indexOf('=');
         return idx == -1 ? string : string.substring(0, idx);
     }
 
-    public BroadlinkBase64Parser(String str) {
-        super(nukeTrailingEquals(str));
+    private static byte[] digest(String str) {
+        try {
+            return Base64.getDecoder().decode(str);
+        } catch (IllegalArgumentException ex) {
+            logger.log(Level.FINER, "{0}", ex.getLocalizedMessage());
+            return null;
+        }
     }
 
-    @Override
-    void setup() throws IllegalArgumentException {
-        data = Base64.getDecoder().decode(getSource());
+    public BroadlinkBase64Parser(String str) {
+        super(digest(nukeTrailingEquals(str)));
     }
 
     @Override
