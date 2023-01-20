@@ -282,7 +282,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
 
             case BLDevice.DEV_RM_2:
             case BLDevice.DEV_RM_MINI:
-            case BLDevice.DEV_RM_MINI_3:
+            // ??? case BLDevice.DEV_RM_MINI_3:
             case BLDevice.DEV_RM_PRO_PHICOMM:
             case BLDevice.DEV_RM_2_HOME_PLUS:
             case BLDevice.DEV_RM_2_2HOME_PLUS_GDT:
