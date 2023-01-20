@@ -17,10 +17,9 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
@@ -36,6 +35,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
+import javax.json.stream.JsonParser;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
@@ -323,7 +327,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                 try {
                     JsonObject obj = gc.getJsonVersion();
                     System.out.println(obj);
-                    System.out.println(obj.get("firmwareVersion").asString());
+                    System.out.println(obj.getString("firmwareVersion"));
                     System.out.println(gc.getJsonNetwork());
                     System.out.println(gc.getJsonSsid());
                     System.out.println(gc.getJsonConnectors());
@@ -961,12 +965,27 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return new InputStreamReader(urlConnection.getInputStream(), Charset.forName("US-ASCII"));
     }
 
+    private JsonValue readFrom(String str) throws IOException {
+        return readFrom(getJsonReader(str));
+    }
+
+    private JsonValue readFrom(Reader reader) throws IOException {
+        JsonParser parser = Json.createParser(reader);
+        JsonParser.Event x = parser.next();
+        JsonValue obj = parser.getValue();
+        return obj;
+    }
+
+    private JsonValue getJsonValue(String thing) throws IOException {
+        return readFrom(getJsonReader(thing));
+    }
+
     private JsonObject getJsonObject(String thing) throws IOException {
-        return JsonObject.readFrom(getJsonReader(thing));
+        return getJsonValue(thing).asJsonObject();
     }
 
     private JsonArray getJsonArray(String thing) throws IOException {
-        return JsonArray.readFrom(getJsonReader(thing));
+        return getJsonValue(thing).asJsonArray();
     }
 
     private JsonObject getJsonVersion() throws IOException {
