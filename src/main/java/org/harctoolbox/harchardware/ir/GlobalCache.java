@@ -40,7 +40,6 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
-import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Utils;
@@ -106,7 +105,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     private static String gcCompressedJoiner(int[]intro, int[]repeat) {
-        LinkedHashMap<String, Character> index = new LinkedHashMap<>(32);
+        Map<String, Character> index = new LinkedHashMap<>(32);
         return gcCompressedJoiner(intro, index) + gcCompressedJoiner(repeat, index);
     }
 
@@ -435,7 +434,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                     break;
             }
             gc.close();
-        } catch (HarcHardwareException e) {
+        } catch (NoSuchTransmitterException e) {
             System.err.println(e.getMessage());
         } catch (UnknownHostException e) {
             System.err.println("Host \"" + hostname + "\" does not resolve.");
@@ -455,14 +454,12 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     private boolean verbose = true;
     private String[] getdevicesResult = null;
 
-    //private GlobalCacheModel globalCacheModel;
-
     private TcpSocketChannel tcpSocketChannel;
     private SerialPort[] serialPorts;
 
-    private ArrayList<Integer> irModules;
-    private ArrayList<Integer> serialModules;
-    private ArrayList<Integer> relayModules;
+    private List<Integer> irModules;
+    private List<Integer> serialModules;
+    private List<Integer> relayModules;
 
     private boolean compressed = false;
 
@@ -614,6 +611,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
+    @SuppressWarnings("null")
     public final void open() throws UnknownHostException, IOException {
         if (tcpSocketChannel != null)
             return; // already open
@@ -657,7 +655,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         this.compressed = compressed;
     }
 
-    @SuppressWarnings("SleepWhileHoldingLock")
+    @SuppressWarnings({"SleepWhileHoldingLock", "UseOfSystemOutOrSystemErr"})
     private synchronized String[] sendCommand(String cmd, int noLines, int delay, String expectedFirstLine) throws IOException {
         if (verbose && cmd != null)
             System.err.println("Sending command \"" + cmd + "\" to GlobalCache (" + hostIp + ")");
@@ -800,9 +798,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return sendCommand("get_IR," + transmitterAddress(module, connector));
     }
 
-    private ArrayList<Integer> getModules(String moduleType) {
-        //String[] dvs = getdevicesResult.split("\n");
-        ArrayList<Integer> modules = new ArrayList<>(5);
+    private List<Integer> getModules(String moduleType) {
+        List<Integer> modules = new ArrayList<>(5);
         for (String devicesResult : getdevicesResult) {
             String[] s = devicesResult.split(" ");
             if (s.length > 1 && s[1].startsWith(moduleType))
@@ -821,15 +818,15 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         throw new IllegalArgumentException("Non-existing module: " + moduleNumber);
     }
 
-    public final ArrayList<Integer> getIrModules() {
+    public final List<Integer> getIrModules() {
         return getModules("IR");
     }
 
-    public final ArrayList<Integer> getSerialModules() {
+    public final List<Integer> getSerialModules() {
         return getModules("SERIAL");
     }
 
-    public final ArrayList<Integer> getRelayModules() {
+    public final List<Integer> getRelayModules() {
         return getModules("RELAY");
     }
 
@@ -884,6 +881,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return toggleState(defaultRelayModule, connector);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public boolean setState(int module, int connector, int state) throws IOException, NoSuchTransmitterException {
         String result = sendCommand("setstate," + transmitterAddress(module, connector) + "," + (state == 0 ? 0 : 1));
         if (verbose) {
