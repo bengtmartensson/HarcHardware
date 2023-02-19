@@ -18,14 +18,10 @@ this program. If not, see http://www.gnu.org/licenses/.
 package org.harctoolbox.harchardware.ir;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -35,11 +31,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-import javax.json.stream.JsonParser;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Utils;
@@ -71,7 +62,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     public  final static int connectorsPerModule = 3;
     public  final static int maxCompressedLetters = 15;
 
-    private final static String apiAddressFragment = "/api/v1/";
     /**
      * GlobalCache default connector
      */
@@ -236,7 +226,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         int arg_i = 0;
         int timeout = defaultSocketTimeout;
         String parserFood = null;
-        boolean json = false;
 
         if (args.length == 0)
             usage();
@@ -274,10 +263,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                         break;
                     case "-B":
                         beacon = true;
-                        arg_i++;
-                        break;
-                    case "-j":
-                        json = true;
                         arg_i++;
                         break;
                     case "-p":
@@ -321,21 +306,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
         try {
             gc = new GlobalCache(hostname, verbose, timeout);
-
-            if (json) {
-                try {
-                    JsonObject obj = gc.getJsonVersion();
-                    System.out.println(obj);
-                    System.out.println(obj.getString("firmwareVersion"));
-                    System.out.println(gc.getJsonNetwork());
-                    System.out.println(gc.getJsonSsid());
-                    System.out.println(gc.getJsonConnectors());
-                    System.out.println(gc.getJsonFiles());
-                } catch (IOException ex) {
-                    System.err.println(ex.getMessage());
-                }
-                System.exit(0);
-            }
 
             if (args.length - 1 < arg_i)
                 System.exit(IrpUtils.EXIT_SUCCESS);
@@ -955,60 +925,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
             return false;
         }
         return response.startsWith("IR Learner Disabled");
-    }
-
-    private InputStreamReader getJsonReader(String thing) throws IOException {
-        URL url = new URL("http", hostIp, apiAddressFragment + thing);
-        URLConnection urlConnection = url.openConnection();
-        return new InputStreamReader(urlConnection.getInputStream(), Charset.forName("US-ASCII"));
-    }
-
-    private JsonValue readFrom(String str) throws IOException {
-        return readFrom(getJsonReader(str));
-    }
-
-    private JsonValue readFrom(Reader reader) throws IOException {
-        JsonParser parser = Json.createParser(reader);
-        JsonParser.Event x = parser.next();
-        JsonValue obj = parser.getValue();
-        return obj;
-    }
-
-    private JsonValue getJsonValue(String thing) throws IOException {
-        return readFrom(getJsonReader(thing));
-    }
-
-    private JsonObject getJsonObject(String thing) throws IOException {
-        return getJsonValue(thing).asJsonObject();
-    }
-
-    private JsonArray getJsonArray(String thing) throws IOException {
-        return getJsonValue(thing).asJsonArray();
-    }
-
-    private JsonObject getJsonVersion() throws IOException {
-        return getJsonObject("version");
-    }
-
-    private JsonObject getJsonNetwork() throws IOException {
-        return getJsonObject("network");
-    }
-
-    private JsonArray getJsonSsid() throws IOException {
-        try {
-            return getJsonArray("network/ssid");
-        } catch (java.lang.UnsupportedOperationException ex) {
-            // Workaround for bug: on non-wlan units, does not return an array, but the result of network.
-            return null;
-        }
-    }
-
-    private JsonArray getJsonConnectors() throws IOException {
-        return getJsonArray("connectors");
-    }
-
-    private JsonArray getJsonFiles() throws IOException {
-        return getJsonArray("files");
     }
 
     @Override
