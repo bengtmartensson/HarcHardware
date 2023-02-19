@@ -45,6 +45,11 @@ import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.Pronto;
 import org.harctoolbox.irp.IrpUtils;
 
+/**
+ * This class implements the GlobalCache TCP Unified TCP API (Version 1.1),
+ * according to <a href="https://www.globalcache.com/files/docs/API-GC-UnifiedTCPv1.1.pdf">the official API documentation</a>.
+ * This covers the models GC-100, iTach, Flex and Global Connect.
+ */
 public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, ITransmitter, ICapture, IWeb {
 
     private static final Logger logger = Logger.getLogger(GlobalCache.class.getName());
@@ -201,7 +206,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         System.err.println("Usagex:");
         System.err.println("GlobalCache [options] <command> [<argument>]");
         System.err.println("where options=-# <count>,-h <hostname>,-c <connector>,-m <module>,-b <baudrate>,-t <timeout>,-p <sendirstring>,-v,-B,-j");
-        System.err.println("and command=send_ir,send_serial,listen_serial,set_relay,get_devices,get_version,set_blink,[set|get]_serial,[set|get]_ir,[set|get]_net,[get|set]_state,get_learn,ccf");
+        System.err.println("and command=send_ir" /*,send_serial,listen_serial,*/
+                + ",set_relay,get_devices,get_version,set_blink,[set|get]_serial,[set|get]_ir,[set|get]_net,[get|set]_state,get_learn,ccf");
         doExit(IrpUtils.EXIT_USAGE_ERROR);
     }
 
@@ -368,20 +374,21 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                         output = gc.sendIr(args[arg_i + 1]) ? "ok" : "error";
                     } else {
                         StringBuilder ccf = new StringBuilder(6 * args.length);
-                        for (int i = arg_i + 1; i < args.length; i++) {
+                        for (int i = arg_i + 1; i < args.length; i++)
                             ccf.append(' ').append(args[i]);
-                        }
 
-                        output = gc.sendIr(ccf.toString(), count, module, connector) ? "ok" : "error";
+                        IrSignal irSignal = Pronto.parse(ccf.toString());
+                        output = gc.sendIr(irSignal, count, module, connector) ? "ok" : "error";
                     }   break;
-                case "send_serial":
-                    StringBuilder transmit = new StringBuilder(2 * args.length);
-                    for (int i = arg_i + 1; i < args.length; i++) {
-                        transmit.append(' ').append(args[i]);
-                    }
+                // Currently broken
+                //case "send_serial":
+                //    StringBuilder transmit = new StringBuilder(2 * args.length);
+                //    for (int i = arg_i + 1; i < args.length; i++) {
+                //        transmit.append(' ').append(args[i]);
+                //    }
 
-                    //output = gc.sendStringCommand(module, transmit, 0);
-                    break;
+                //      output = gc.sendStringCommand(module, transmit, 0);
+                //    break;
                 case "stop_ir":
                     gc.stopIr(module, connector);
                     break;
@@ -389,8 +396,9 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                     ModulatedIrSequence seq = gc.capture();
                     System.out.println(seq);
                     break;
-                case "listen_serial":
-                    System.err.println("Press Ctrl-C to interrupt.");
+                    // Currently broken
+                    //case "listen_serial":
+                    // System.err.println("Press Ctrl-C to interrupt.");
                     // Never returns
                     //gc.listenStringCommands(module);
                     //} else if (cmd.equals("ccf")) {
@@ -398,7 +406,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                     //    for (int i = arg_i + 1; i < args.length; i++)
                     //        s = s + args[i];
                     //    System.out.println(gc2Ccf(s));
-                    break;
+                    //break;
                 default:
                     usage();
                     break;
@@ -728,24 +736,11 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return sendIr(code, count, gct.module, gct.port);
     }
 
-    public boolean sendIr(String ccf, int count, int module, int connector) throws Pronto.NonProntoFormatException, InvalidArgumentException, NoSuchTransmitterException, IOException {
-        return sendIr(Pronto.parse(ccf), count, module, connector);
-    }
-
-    public boolean sendCcf(String ccfString, int count, Transmitter transmitter) throws Pronto.NonProntoFormatException, InvalidArgumentException, NoSuchTransmitterException, IOException {
-        GlobalCacheIrTransmitter gctransmitter = newGlobalCacheIrTransmitter(transmitter);
-        return sendIr(ccfString, count, gctransmitter.module, gctransmitter.port);
-    }
-
-    public boolean sendCcfRepeat(String ccfString, Transmitter transmitter) throws IOException, NoSuchTransmitterException, Pronto.NonProntoFormatException, InvalidArgumentException {
-        GlobalCacheIrTransmitter gctransmitter = newGlobalCacheIrTransmitter(transmitter);
-        return sendIr(ccfString, repeatMax, gctransmitter.module, gctransmitter.port);
-    }
-
     public String[] getDevices() {
         return getdevicesResult.clone();
     }
 
+    // Meaningful only on GC-100.
     public String getVersion(int module) throws IOException {
         return sendCommand("getversion," + module);
     }
@@ -893,6 +888,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return pulseState(defaultRelayModule, connector);
     }
 
+    // GC-100 only
     public void setBlink(int arg) throws IOException {
         sendCommand("blink," + arg, 0);
     }
@@ -903,6 +899,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
+    // Only iTach, Flex GlobalConnect
     public synchronized ModulatedIrSequence capture() throws InvalidArgumentException {
         try {
             String[] result = sendCommand("get_IRL", 1, smallDelay, null);
