@@ -78,7 +78,7 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
 
     @Override
     public IrSequence toIrSequence(Double dummyGap) throws OddSequenceLengthException {
-        if (this.data == null)
+        if (this.data == null || this.data.length == 0)
             return null;
         int prefix = readdata(TOKEN_POS);
         if (prefix != IR_TOKEN) {
