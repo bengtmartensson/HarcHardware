@@ -1,6 +1,6 @@
 package org.harctoolbox.harchardware.ir;
 
-import org.harctoolbox.ircore.IrSequence;
+import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.OddSequenceLengthException;
 import static org.testng.Assert.assertEquals;
 import org.testng.annotations.AfterClass;
@@ -37,7 +37,8 @@ public class BroadlinkNGTest {
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void testBroadlinkHexString() throws OddSequenceLengthException {
         System.out.println("broadlinkHexString");
-        IrSequence irSequence = new IrSequence(new int[] {9721,4827,624,1773,657,558,657,558,624,1806,624,558,657,558,657,1773,624,591,624,591,624,1773,657,1773,624,591,624,1773,657,1773,657,558,624,1773,657,1773,657,1773,624,591,624,1773,657,1773,657,558,624,591,624,558,657,558,657,558,657,1773,624,591,624,558,657,1773,657,1773,624,1773,657,42955,9721,2364,657,100000});
+        ModulatedIrSequence irSequence = new ModulatedIrSequence(new int[] {9721,4827,624,1773,657,558,657,558,624,1806,624,558,657,558,657,1773,624,591,624,591,624,1773,657,1773,624,591,624,1773,657,1773,657,558,624,1773,657,1773,657,1773,624,591,624,1773,657,1773,657,558,624,591,624,558,657,558,657,558,657,1773,624,591,624,558,657,1773,657,1773,624,1773,657,42955,9721,2364,657,100000},
+                ModulatedIrSequence.DEFAULT_FREQUENCY);
         int count = 42;
         String expResult = "2629540000012893133614111411133713111411143613121312133614361312133614361411133614361436131213361436141113121311141114111436131213111436143613361400051C0001284814000D05";
         String result = Broadlink.broadlinkHexString(irSequence, count);

@@ -28,6 +28,8 @@ import static org.harctoolbox.harchardware.ir.Broadlink.IR_TOKEN;
 import static org.harctoolbox.harchardware.ir.Broadlink.LENGTH_LSB_POS;
 import static org.harctoolbox.harchardware.ir.Broadlink.LENGTH_MSB_POS;
 import static org.harctoolbox.harchardware.ir.Broadlink.REPEAT_POS;
+import static org.harctoolbox.harchardware.ir.Broadlink.RF_433_ENDING_TOKEN;
+import static org.harctoolbox.harchardware.ir.Broadlink.RF_433_TOKEN;
 import static org.harctoolbox.harchardware.ir.Broadlink.TICK;
 import static org.harctoolbox.harchardware.ir.Broadlink.TOKEN_POS;
 import org.harctoolbox.ircore.AbstractIrParser;
@@ -80,9 +82,8 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
     public IrSequence toIrSequence(Double dummyGap) throws OddSequenceLengthException {
         if (this.data == null || this.data.length == 0)
             return null;
-        int prefix = readdata(TOKEN_POS);
-        if (prefix != IR_TOKEN) {
-            logger.log(Level.FINER, "IR signal did not start with 0x{0}", Integer.toHexString(IR_TOKEN));
+        if (!isIr() && ! isRf433()) {
+            logger.log(Level.FINER, "IR signal did not start with 0x{0} or 0x{1}", new Object[]{Integer.toHexString(IR_TOKEN), Integer.toHexString(RF_433_TOKEN)});
             return null;
         }
         int repeats = readdata(REPEAT_POS);
@@ -98,10 +99,12 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
                     chunk = 256 * readdata(readIndex) + readdata(readIndex + 1);
                     readIndex += 2;
                     durations.add((int) Math.round(chunk * TICK));
-                    if (chunk == IR_ENDING_TOKEN)
+                    if (chunk == IR_ENDING_TOKEN || chunk == RF_433_ENDING_TOKEN)
                         break;
                 } else
                     durations.add((int) Math.round(chunk * TICK));
+                if (readIndex >= length + DURATIONS_OFFSET)
+                    break;
             }
         } catch (IndexOutOfBoundsException ex) {
             logger.log(Level.FINER, "IR data inconsistent");
@@ -117,12 +120,20 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
     @Override
     public IrSignal toIrSignal(Double fallbackFrequency, Double dummyGap) throws OddSequenceLengthException {
         IrSequence irSequence = toIrSequence(dummyGap);
-        return irSequence != null ? new IrSignal(irSequence, A_PRIOR_MODULATION_FREQUENCY, null) : null;
+        return irSequence != null ? new IrSignal(irSequence, isIr() ? A_PRIOR_MODULATION_FREQUENCY : 0.0, null) : null;
     }
 
     private int readdata(int i) throws IndexOutOfBoundsException {
         byte d = data[i];
         return Byte.toUnsignedInt(d);
+    }
+
+    private boolean isIr() {
+        return readdata(TOKEN_POS) == IR_TOKEN;
+    }
+
+    private boolean isRf433() {
+        return readdata(TOKEN_POS) == RF_433_TOKEN;
     }
 
     @Override

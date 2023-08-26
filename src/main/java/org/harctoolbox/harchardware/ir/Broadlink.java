@@ -28,7 +28,6 @@ import com.github.mob41.blapi.pkt.cmd.rm2.SendDataCmdPayload;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -37,10 +36,10 @@ import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Utils;
-import org.harctoolbox.harchardware.misc.Ethers;
 import org.harctoolbox.ircore.InvalidArgumentException;
 import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.IrSignal;
+import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.OddSequenceLengthException;
 import org.harctoolbox.irp.IrpUtils;
 
@@ -68,13 +67,14 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
     public final static int LENGTH_LSB_POS = 2;
     public final static int LENGTH_MSB_POS = 3;
     public final static int DURATIONS_OFFSET = 4;
+    public final static int MIN_ARCTECH_REPEATS = 6;
     public final static double A_PRIOR_MODULATION_FREQUENCY = 38000d;
 
     private static JCommander argumentParser;
 
     private static void usage(int exitcode) {
         @SuppressWarnings("UseOfSystemOutOrSystemErr")
-                PrintStream printStream = exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err;
+        PrintStream printStream = exitcode == IrpUtils.EXIT_SUCCESS ? System.out : System.err;
         argumentParser.setConsole(new DefaultConsole(printStream));
         argumentParser.usage();
 
@@ -135,7 +135,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
                 for (int i = 0; i < commandLineArgs.durations.size(); i++)
                     data[i] = Double.parseDouble(commandLineArgs.durations.get(i));
 
-                IrSequence irSequence = new IrSequence(data, null);
+                ModulatedIrSequence irSequence = new ModulatedIrSequence(data, A_PRIOR_MODULATION_FREQUENCY);
                 broadlink.sendIr(irSequence, commandLineArgs.count);
             }
             broadlink.close();
@@ -173,7 +173,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
         return sb.toString();
     }
 
-    public static String broadlinkHexString(IrSequence irSequence, int count) {
+    public static String broadlinkHexString(ModulatedIrSequence irSequence, int count) {
         List<Integer> irData = broadlinkList(irSequence, count);
         StringBuilder sb = new StringBuilder(4 * irData.size());
         irData.forEach(chunk -> {
@@ -182,31 +182,16 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
         return sb.toString();
     }
 
-    public static String broadlinkBase64String(IrSequence irSequence, int count) {
+    public static String broadlinkBase64String(ModulatedIrSequence irSequence, int count) {
         byte[] bytearray = broadlinkData(irSequence, count);
         return Base64.getEncoder().encodeToString(bytearray);
     }
 
-//    public static String broadlinkHexString(IrSignal irSignal, int count) {
-//        if (irSignal.repeatOnly())
-//            return broadlinkHexString(irSignal.getRepeatSequence(), count);
-//
-//        IrSequence irSequence = irSignal.getRepeatLength() > 0 ? irSignal.toModulatedIrSequence(true, count - 1, true) : irSignal.getIntroSequence();
-//        return broadlinkHexString(irSequence, 1);
-//    }
-
-//    public static String broadlinkBase64String(IrSignal irSignal, int count) {
-//        if (irSignal.repeatOnly())
-//            return broadlinkBase64String(irSignal.getRepeatSequence(), count - 1);
-//
-//        IrSequence irSequence = irSignal.getRepeatLength() > 0 ? irSignal.toModulatedIrSequence(true, count - 1, true) : irSignal.getIntroSequence();
-//        return broadlinkBase64String(irSequence, 1);
-//    }
-
-    private static List<Integer> broadlinkList(IrSequence irSequence, int count) {
+    private static List<Integer> broadlinkList(ModulatedIrSequence irSequence, int count) {
+        boolean ir = irSequence.getFrequencyWithDefault() > 0;
         List<Integer> list = new ArrayList<>(2 * irSequence.getLength());
-        list.add(IR_TOKEN);
-        list.add(count - 1);
+        list.add(ir ? IR_TOKEN : RF_433_TOKEN);
+        list.add(ir ? count - 1 : Math.max(count, MIN_ARCTECH_REPEATS) - 1);
         list.add(0);
         list.add(0);
         for (int i = 0; i < irSequence.getLength() - 1; i++) { // ignoring final gap ...
@@ -214,13 +199,13 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
             int noTicks = (int) Math.round(duration / TICK);
             addEntry(list, noTicks);
         }
-        addEntry(list, IR_ENDING_TOKEN); // ... and replacing it with the Broadlink ending token
+        addEntry(list, ir ? IR_ENDING_TOKEN : RF_433_ENDING_TOKEN); // ... and replacing it with the Broadlink ending token
         list.set(LENGTH_MSB_POS, list.size() / 256);
         list.set(LENGTH_LSB_POS, list.size() % 256);
         return list;
     }
 
-    private static byte[] broadlinkData(IrSequence irSequence, int count) {
+    private static byte[] broadlinkData(ModulatedIrSequence irSequence, int count) {
         List<Integer> list = broadlinkList(irSequence, count);
         byte[] data = new byte[list.size()];
         for (int i = 0; i < data.length; i++)
@@ -354,14 +339,14 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
         return true;
     }
 
-    public boolean sendIr(IrSequence irSequence, int count) throws HarcHardwareException, NoSuchTransmitterException, IOException, InvalidArgumentException {
+    public boolean sendIr(ModulatedIrSequence irSequence, int count) throws HarcHardwareException, NoSuchTransmitterException, IOException, InvalidArgumentException {
         byte[] data = broadlinkData(irSequence, count);
         return sendIr(data);
     }
 
     public boolean sendIr(IrSignal irSignal, int count) throws HarcHardwareException, NoSuchTransmitterException, IOException, InvalidArgumentException {
         int reps = irSignal.repeatsPerCountSemantic(count);
-        IrSequence irSequence = irSignal.toModulatedIrSequence(true, reps, true);
+        ModulatedIrSequence irSequence = irSignal.toModulatedIrSequence(true, reps, true);
         return sendIr(irSequence, 1);
     }
 
