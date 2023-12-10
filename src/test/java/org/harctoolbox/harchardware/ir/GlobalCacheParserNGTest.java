@@ -18,15 +18,15 @@ public class GlobalCacheParserNGTest {
     private static final String sendirSilly = "sendir,1:1,1,38400,1,999,347,173,22,22,22,22,22,65,22,65,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,22,22,22,22,65,22,65,22,65,22,22,22,22,22,22,22,65,22,65,22,1700,347,87,22,3692";
     private static final String pronto = "0000 006C 0022 0002 015B 00AD 0016 0016 0016 0016 0016 0041 0016 0041 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0041 0016 0016 0016 0016 0016 0016 0016 0041 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0041 0016 0041 0016 0041 0016 0016 0016 0016 0016 0041 0016 0041 0016 0041 0016 0016 0016 0016 0016 0016 0016 0041 0016 0041 0016 06A4 015B 0057 0016 0E6C";
 
+    public GlobalCacheParserNGTest() {
+    }
+
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public GlobalCacheParserNGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod

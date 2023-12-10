@@ -35,16 +35,15 @@ public class Mode2ParserNGTest {
             + "space 10\n"
             + "pulse 11\n";
 
+    public Mode2ParserNGTest() {
+    }
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public Mode2ParserNGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod

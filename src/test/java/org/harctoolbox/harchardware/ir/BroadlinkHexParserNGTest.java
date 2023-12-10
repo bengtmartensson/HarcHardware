@@ -10,15 +10,15 @@ import org.testng.annotations.Test;
 
 public class BroadlinkHexParserNGTest {
 
+    public BroadlinkHexParserNGTest() {
+    }
+
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public BroadlinkHexParserNGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod

@@ -11,15 +11,15 @@ import org.testng.annotations.Test;
 
 public class BroadlinkBase64ParserNGTest {
 
+    public BroadlinkBase64ParserNGTest() {
+    }
+
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public BroadlinkBase64ParserNGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod

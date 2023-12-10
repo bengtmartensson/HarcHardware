@@ -11,15 +11,15 @@ import org.testng.annotations.Test;
 
 public class BroadlinkNGTest {
 
+    public BroadlinkNGTest() {
+    }
+
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public BroadlinkNGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod

@@ -24,16 +24,15 @@ public class IRrecvDumpV2NGTest {
             = "unsigned int  rawData[67] = {8950,4450, 600,500, 600,500, 600,550, 600,500, 600,500, 600,550, 550,550, 600,1650, 550,1650, 600,1650, 600,1650, 600,1600, 600,1650, 600,1650, 550,1650, 600,1650, 600,1650, 550,1650, 600,1650, 600,1650, 550,1650, 600,550, 550,550, 600,500, 600,500, 600,550, 600,500, 600,500, 600,550, 600,1600, 600,1650, 600,1650, 550};  // NEC 1FFF807";
     private static final String expected = "[8950,4450,600,500,600,500,600,550,600,500,600,500,600,550,550,550,600,1650,550,1650,600,1650,600,1650,600,1600,600,1650,600,1650,550,1650,600,1650,600,1650,550,1650,600,1650,600,1650,550,1650,600,550,550,550,600,500,600,500,600,550,600,500,600,500,600,550,600,1600,600,1650,600,1650,550,20000]";
 
+    public IRrecvDumpV2NGTest() {
+    }
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public IRrecvDumpV2NGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod
