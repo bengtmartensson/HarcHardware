@@ -154,6 +154,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
         return sendIr(irSignal, count, (LircTransmitter) transmitter);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public boolean sendIr(IrSignal irSignal, int count, LircTransmitter transmitter) throws HarcHardwareException {
         stopRequested = false;
         try {
@@ -169,7 +170,11 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
             if (verbose)
                 System.err.println("DevLirc sending " + count + " IrSignals: " + irSignal);
 
-            device.setSendCarrier((int) ModulatedIrSequence.getFrequencyWithDefault(irSignal.getFrequency()));
+            try {
+                device.setSendCarrier((int) ModulatedIrSequence.getFrequencyWithDefault(irSignal.getFrequency()));
+            } catch (NotSupportedException ex) {
+                System.err.println("WARNING: Device does not support setting carrier freqency; using driver default.");
+            }
 
             sendIr(irSignal.getIntroSequence());
             for (int i = 0; i < irSignal.repeatsPerCountSemantic(count); i++) {
