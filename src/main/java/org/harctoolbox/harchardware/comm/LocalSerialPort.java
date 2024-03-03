@@ -30,30 +30,70 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.IHarcHardware;
 
+// NOTE: public functions must not expose the underlying implementation
+// (gnu.io.*), in particular not throw any gnu.io.*Exceptions!!
+
 public abstract class LocalSerialPort implements IHarcHardware {
 
-    public final static String defaultPort = "/dev/ttyS0";
-    private final static int msToWaitForPort = 100;
+    private static final Logger logger = Logger.getLogger(LocalSerialPort.class.getName());
 
-    private static ArrayList<String> cachedPortNames = null;
-    private final static int maxtries = 3;
+    public static final String DEFAULT_PORT = "/dev/ttyS0";
+    public static final int DEFAULT_BAUD = 9600;
+    public static final int DEFAULT_DATABITS = 8;
+    public static final Parity DEFAULT_PARITY = Parity.NONE;
+    public static final StopBits DEFAULT_STOPBITS = StopBits.ONE;
+    public static final FlowControl DEFAULT_FLOWCONTROL = FlowControl.NONE;
+    private static final int MS_TO_WAIT_FOR_PORT = 100;
+    public static final int DEFAULT_TIMEOUT = 0;
+    private static final String SLASH_DEV = "/dev";
 
-    public static String getSerialPortName(int portNumber) throws IOException, NoSuchPortException {
+    private static List<String> cachedPortNames = null;
+    private static final File LOCKDEV_DIR = new File("/var/lock/lockdev");
+    private static final String NRLIB_PROPERTY_NAME = "libNRJavaSerial.userlib";
+    private static final String NRLIB_NAME = "NRJavaSerial";
+    public static final String DEFAULT = "default";
+
+//    private static File libraryDir = null;
+
+//    static {
+//        loadLibrary();
+//    }
+    public static synchronized void setLibraryDir(File libraryDir) throws IOException {
+//        libraryDir = newLibraryDir;
+//    }
+//
+//    private static synchronized void loadLibrary() {
+//        try {
+        if (LOCKDEV_DIR.isDirectory() && LOCKDEV_DIR.canWrite() && libraryDir != null) {
+            File absFile = new File(libraryDir, System.mapLibraryName(NRLIB_NAME));
+            // Load it here, because NRJavaSerial does not properly throw UnsatisfiedLinkError
+            //System.load(absFile.getCanonicalPath());
+            System.setProperty(NRLIB_PROPERTY_NAME, absFile.getCanonicalPath());
+//        } catch (IOException ex) {
+//            throw new UnsatisfiedLinkError(ex.getLocalizedMessage());
+        }
+    }
+
+    public static String getSerialPortName(Integer portNumber) throws NonExistingPortException {
         @SuppressWarnings("unchecked")
-                Enumeration<CommPortIdentifier> portEnum = CommPortIdentifier.getPortIdentifiers();
+        Enumeration<CommPortIdentifier> portEnum = CommPortIdentifier.getPortIdentifiers();
         int nr = 0;
         while (portEnum.hasMoreElements()) {
             CommPortIdentifier portIdentifier = portEnum.nextElement();
             if (portIdentifier.getPortType() == CommPortIdentifier.PORT_SERIAL)
                 nr++;
 
-            if (nr == portNumber)
+            if (portNumber == null || nr == portNumber)
                 return portIdentifier.getName();
         }
-        throw new NoSuchPortException();
+        throw new NonExistingPortException(Integer.toString(portNumber));
     }
 
     /**
@@ -63,7 +103,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
      * @throws IOException
      */
     @SuppressWarnings({"unchecked", "ReturnOfCollectionOrArrayField"})
-    public static ArrayList<String> getSerialPortNames(boolean useCached) throws IOException {
+    public static List<String> getSerialPortNames(boolean useCached) throws IOException {
         if (useCached && cachedPortNames != null)
             return cachedPortNames;
 
@@ -73,7 +113,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
         } catch (UnsatisfiedLinkError ex) {
             throw new IOException(ex.getMessage());
         }
-        ArrayList<String> names = new ArrayList<>(8);
+        List<String> names = new ArrayList<>(8);
         while (portEnum.hasMoreElements()) {
             CommPortIdentifier portIdentifier = portEnum.nextElement();
             if (portIdentifier.getPortType() == CommPortIdentifier.PORT_SERIAL)
@@ -86,53 +126,81 @@ public abstract class LocalSerialPort implements IHarcHardware {
     // On systems with /dev device names, expand symbolic links
     // (like the one udev creates, /dev/arduino -> /dev/ttyACM0)
     // Otherwise, just return the argument.
-    private static String canonicalizePortName(String portName) throws IOException {
-        return portName.startsWith("/dev") ? new File(portName).getCanonicalPath() : portName;
+    public static String canonicalizePortName(String name, String dflt) throws IOException {
+        String portName = (name == null || name.equalsIgnoreCase(DEFAULT)) ? dflt : name;
+        if (File.separatorChar == '\\')
+            return portName;
+        File absFile = new File(portName).isAbsolute()  ? new File(portName) : new File(SLASH_DEV, portName);
+        String path = absFile.getCanonicalPath();
+        if (name == null || !name.equals(path))
+            logger.log(Level.INFO, "Device named \"{0}\" expanded to \"{1}\"", new String[]{name, path});
+        return path;
+    }
+
+    public static String canonicalizePortName(String portName) throws IOException {
+        return canonicalizePortName(portName, DEFAULT_PORT);
+    }
+
+    public static String getSoftwareVersion() {
+        // FIXME return RXTXVersion.getVersion() + "/" + RXTXVersion.nativeGetVersion();
+        return "NRJavaSerial-5.2.1";
+    }
+
+    public static StopBits mkStopBits(int stopBits) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     protected InputStream inStream;
     protected OutputStream outStream;
     private CommPort commPort;
     private final String portName;
+    private final String realPath;
     private final int baud;
-    private final int length;
-    private final int stopBits;
+    private final int dataLength;
+    private final StopBits stopBits;
     private final Parity parity;
     private final FlowControl flowControl;
     private int timeout;
     protected boolean verbose;
 
-    public LocalSerialPort(String portName, int baud, int length, int stopBits, Parity parity, FlowControl flowControl, int timeout) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this.verbose = false;
+    public LocalSerialPort(String portName, boolean verbose, Integer timeout, Integer baud, Integer dataLength, StopBits stopBits, Parity parity, FlowControl flowControl) throws IOException {
+        this.verbose = verbose;
         this.portName = portName;
-        this.baud = baud;
-        this.length = length;
-        this.stopBits = stopBits;
-        this.parity = parity;
-        this.flowControl = flowControl;
-        this.timeout = timeout;
+        realPath = canonicalizePortName(portName);
+        this.baud = baud != null ? baud : DEFAULT_BAUD;
+        this.dataLength = dataLength != null ? dataLength : DEFAULT_DATABITS;
+        this.stopBits = stopBits != null ? stopBits : DEFAULT_STOPBITS;
+        this.parity = parity != null ? parity : DEFAULT_PARITY;
+        this.flowControl = flowControl != null ? flowControl : DEFAULT_FLOWCONTROL;
+        this.timeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
     }
 
 
-    public LocalSerialPort(String portName, int baud) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
-        this.verbose = false;
+    public LocalSerialPort(String portName, boolean verbose, Integer timeout, Integer baud) throws IOException {
+        this(portName, verbose, timeout, baud, null, null, null, null);
     }
 
-    public LocalSerialPort(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, 9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
-        this.verbose = false;
+    public LocalSerialPort(String portName, boolean verbose, Integer timeout) throws IOException {
+        this(portName, verbose, timeout, null);
     }
 
-    public LocalSerialPort(int portNumber) throws IOException, NoSuchPortException, PortInUseException, UnsupportedCommOperationException {
-        this(getSerialPortName(portNumber), 9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, Parity.NONE, FlowControl.NONE, 0);
-        this.verbose = false;
+    public LocalSerialPort(String portName, boolean verbose) throws IOException {
+        this(portName, verbose, null);
     }
+
+    public LocalSerialPort(String portName) throws IOException {
+        this(portName, false);
+    }
+
+    public LocalSerialPort(Integer portNumber) throws NonExistingPortException, IOException {
+        this(getSerialPortName(portNumber));
+    }
+
     private void lowLevelOpen() throws NoSuchPortException, PortInUseException, IOException {
-        String realPath = canonicalizePortName(portName);
         CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(realPath);
-        commPort = portIdentifier.open(this.getClass().getName(), msToWaitForPort);
+        commPort = portIdentifier.open(this.getClass().getName(), MS_TO_WAIT_FOR_PORT);
     }
+
     @Override
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
@@ -140,37 +208,41 @@ public abstract class LocalSerialPort implements IHarcHardware {
     /**
      * Opens the device.
      *
+     * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      * @throws HarcHardwareException Bundles RXTX exceptions together.
      * @throws IOException
      */
     @Override
-    public void open() throws HarcHardwareException, IOException {
+    public void open() throws NonExistingPortException, HarcHardwareException, IOException {
         boolean success = false;
         try {
             lowLevelOpen();
             success = true;
-        } catch (NoSuchPortException | PortInUseException ex) {
+        } catch (NoSuchPortException ex) {
             commPort = null;
-            throw new HarcHardwareException(ex);
+            throw new NonExistingPortException(portName);
+        } catch (PortInUseException ex) {
+            commPort = null;
+            throw new HarcHardwareException("Port in use: " + portName);
         }
 
         if (!success)
             throw new HarcHardwareException("Could not open LocalSerialPort " + portName);
 
-        if (commPort instanceof gnu.io.SerialPort) {
-            SerialPort serialPort = (SerialPort) commPort;
-            try {
-                serialPort.setSerialPortParams(baud, length, stopBits, parity.ordinal());
-            } catch (UnsupportedCommOperationException ex) {
-                throw new HarcHardwareException(ex);
-            }
+        //if (commPort instanceof gnu.io.SerialPort) {
+        RXTXPort serialPort = (RXTXPort) commPort;
+        try {
+            serialPort.setSerialPortParams(baud, dataLength, stopBits.ordinal(), parity.ordinal());
+        } catch (UnsupportedCommOperationException ex) {
+            throw new HarcHardwareException(ex);
+        }
 
-            inStream = serialPort.getInputStream();
-            outStream = serialPort.getOutputStream();
-        }
-        if (commPort instanceof gnu.io.RXTXPort) {
-            ((RXTXPort) commPort).setFlowControlMode(flowControl.ordinal());
-        }
+        inStream = serialPort.getInputStream();
+        outStream = serialPort.getOutputStream();
+        //}
+        //if (commPort instanceof gnu.io.RXTXPort) {
+        serialPort.setFlowControlMode(flowControl.ordinal());
+        //}
         setTimeout();
     }
 
@@ -203,7 +275,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
 
     @Override
     public String getVersion() {
-        return "n/a";
+        return getSoftwareVersion();
     }
 
     /**
@@ -236,9 +308,9 @@ public abstract class LocalSerialPort implements IHarcHardware {
     }
 
     public void setDTR(boolean state) {
-        if (commPort instanceof gnu.io.RXTXPort) {
+        //if (commPort instanceof gnu.io.RXTXPort) {
             ((SerialPort) commPort).setDTR(state);
-        }
+        //}
     }
 
     public void dropDTR(int duration) {
@@ -250,12 +322,31 @@ public abstract class LocalSerialPort implements IHarcHardware {
         setDTR(true);
     }
 
+    @Override
+    public void setDebug(int dbg) {
+    }
+
+    public enum StopBits {
+        NONE, // 0
+        ONE, // 1
+        TWO, // 2
+        ONE_AND_A_HALF; // 3
+
+        public static StopBits mkStopBits(int stopBits) {
+            return stopBits == 2 ? TWO : ONE;
+        }
+    }
+
     public enum Parity {
         NONE,  // 0
         ODD,   // 1
         EVEN,  // 2
         MARK,  // 3
         SPACE; // 4
+
+        public static Parity parse(String str) {
+            return Parity.valueOf(str.toUpperCase(Locale.US));
+        }
     }
 
     public enum FlowControl {
@@ -272,5 +363,9 @@ public abstract class LocalSerialPort implements IHarcHardware {
         dummy6,
         dummy7,
         XONXOFF;     // 12
+
+        public static FlowControl parse(String str) {
+            return FlowControl.valueOf(str.toUpperCase(Locale.US).replaceAll("/", ""));
+        }
     }
 }

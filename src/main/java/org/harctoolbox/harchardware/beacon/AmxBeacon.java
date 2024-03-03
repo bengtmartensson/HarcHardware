@@ -25,10 +25,14 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.Utils;
 
 
 public class AmxBeacon {
+
+    private static final Logger logger = Logger.getLogger(AmxBeacon.class.getName());
+
     public  final static String broadcastIp = "239.255.250.250";
     public  final static int broadcastPort = 9131;
     public  final static String beaconPreamble = "AMXB";
@@ -54,6 +58,7 @@ public class AmxBeacon {
      * Fires up a test instance.
      * @param args not necessary, nor evaluated. Runs until stopped from external source.
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             String hostname = Utils.getHostname();
@@ -80,7 +85,7 @@ public class AmxBeacon {
         try {
             sock = new DatagramSocket();
         } catch (SocketException ex) {
-            System.err.println(ex);
+            logger.severe(ex.getLocalizedMessage());
             return;
         }
         try {
@@ -116,7 +121,7 @@ public class AmxBeacon {
                     beacon.sendCommandUdp();
                     Thread.sleep(beaconPeriod);
                 } catch (IOException | InterruptedException ex) {
-                    System.err.println(ex.getMessage());
+                    logger.severe(ex.getLocalizedMessage());
                 }
             }
         }

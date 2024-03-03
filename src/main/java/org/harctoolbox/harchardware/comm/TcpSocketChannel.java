@@ -37,7 +37,7 @@ import org.harctoolbox.harchardware.Utils;
  * It is not meant to be inherited from, or exported.
  * It should therefore throw low-level exceptions, not HarcHardwareException.
  */
-public class TcpSocketChannel implements ICommandLineDevice, IBytesCommand {
+public class TcpSocketChannel implements ICommandLineDevice, IBytesCommand, AutoCloseable {
     private InetAddress inetAddress = null;
     private int portNumber;
     private boolean verbose;

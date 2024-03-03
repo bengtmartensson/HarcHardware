@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortBuffered;
@@ -38,10 +35,10 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
     private String lineEnding;
     private boolean raw;
 
-    public IrGenericSerial(String portName, int baudRate, int dataSize, int stopBits, LocalSerialPort.Parity parity,
-            LocalSerialPort.FlowControl flowControl, int timeout, boolean verbose)
-            throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        super(LocalSerialPortBuffered.class, portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
+    public IrGenericSerial(String portName, boolean verbose, Integer timeout, Integer baudRate, Integer dataSize,
+            LocalSerialPort.StopBits stopBits, LocalSerialPort.Parity parity, LocalSerialPort.FlowControl flowControl)
+            throws IOException {
+        super(LocalSerialPortBuffered.class, portName, verbose, timeout, baudRate, dataSize, stopBits, parity, flowControl);
     }
 
     /**
@@ -99,7 +96,7 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
             str.append(seq.toString(useSigns));
         } else {
             IrSignal signal = new IrSignal(seq, seq.getFrequency(), seq.getDutyCycle());
-            str.append(Pronto.toString(irSignal));
+            str.append(Pronto.toString(signal));
         }
         str.append(lineEnding);
         return str.toString();
@@ -107,6 +104,5 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
 
     @Override
     public void setDebug(int debug) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

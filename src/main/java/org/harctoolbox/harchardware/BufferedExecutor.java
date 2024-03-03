@@ -84,7 +84,7 @@ public class BufferedExecutor implements ICommandLineDevice {
     }
 
     @Override
-    public void setTimeout(int timeout) throws IOException {
+    public void setTimeout(int timeout) throws IOException, HarcHardwareException {
         executor.setTimeout(timeout);
     }
 

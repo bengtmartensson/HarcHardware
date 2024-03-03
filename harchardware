@@ -1,0 +1,11 @@
+#!/bin/sh
+# Ad hoc wrapper, for development
+
+PROJECT=HarcHardware
+JAVA=java
+HOME="$(dirname -- "$(readlink -f -- "${0}")" )"
+VERSION=$(xsltproc ${HOME}/common/xslt/extract_project_version.xsl ${HOME}/pom.xml)
+JAR=${HOME}/target/${PROJECT}-${VERSION}-jar-with-dependencies.jar
+MAIN="${JAVA} -jar ${JAR}"
+
+exec ${MAIN} "$@"

@@ -23,7 +23,7 @@ package org.harctoolbox.harchardware;
  */
 public class HarcHardwareException extends Exception {
     public HarcHardwareException(String str) {
-        super("Hardware based exception: " + str);
+        super(str);
     }
 
     public HarcHardwareException(Throwable ex) {

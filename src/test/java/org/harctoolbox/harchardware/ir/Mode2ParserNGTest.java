@@ -14,6 +14,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
 public class Mode2ParserNGTest {
 
     private static final String testString = "# comment\n\n"
@@ -34,16 +35,15 @@ public class Mode2ParserNGTest {
             + "space 10\n"
             + "pulse 11\n";
 
+    public Mode2ParserNGTest() {
+    }
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public void setUpClass() throws Exception {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    public Mode2ParserNGTest() {
+    public void tearDownClass() throws Exception {
     }
 
     @BeforeMethod
@@ -62,7 +62,7 @@ public class Mode2ParserNGTest {
     public void testReadIrSequencesUntilEOF() throws IOException {
         System.out.println("readIrSequencesUntilEOF");
         StringReader reader = new StringReader(testString);
-        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULT_THRESHOLD);
+        Mode2Parser instance = new Mode2Parser(reader, Mode2Parser.DEFAULT_THRESHOLD);
         List result;
         result = instance.readIrSequencesUntilEOF();
         assertEquals(result.size(), 2);
@@ -77,7 +77,7 @@ public class Mode2ParserNGTest {
     public void testReadIrSequence() throws IOException {
         System.out.println("readIrSequence");
         StringReader reader = new StringReader(testString);
-        Mode2Parser instance = new Mode2Parser(reader, false, Mode2Parser.DEFAULT_THRESHOLD);
+        Mode2Parser instance = new Mode2Parser(reader, Mode2Parser.DEFAULT_THRESHOLD);
         IrSequence result;
         try {
             result = instance.readIrSequence();

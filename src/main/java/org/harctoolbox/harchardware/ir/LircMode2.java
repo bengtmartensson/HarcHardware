@@ -39,7 +39,7 @@ public final class LircMode2 implements IHarcHardware, ICapture, IReceive  {
     private final Mode2Parser parser;
 
     public LircMode2(Reader reader, boolean verbose, int endingTimeout) {
-        parser = new Mode2Parser(reader, verbose, (int) IrCoreUtils.milliseconds2microseconds(endingTimeout));
+        parser = new Mode2Parser(reader, (int) IrCoreUtils.milliseconds2microseconds(endingTimeout));
     }
 
     public LircMode2(InputStream inputStream, boolean verbose, int endingTimeout) {
@@ -57,7 +57,6 @@ public final class LircMode2 implements IHarcHardware, ICapture, IReceive  {
 
     @Override
     public void setVerbose(boolean verbose) {
-        parser.setVerbose(verbose);
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.harctoolbox.harchardware.IHarcHardware;
 
 public class UdpSocketPort implements ICommandLineDevice, IHarcHardware {
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         try {
             UdpSocketPort port = new UdpSocketPort("irtrans", 21000, 2000, true);

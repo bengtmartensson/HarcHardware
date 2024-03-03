@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2013, 2014, 2015 Bengt Martensson.
+Copyright (C) 2013, 2014, 2015, 2020 Bengt Martensson.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,13 +17,12 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.harchardware.TimeoutException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
 import org.harctoolbox.ircore.InvalidArgumentException;
@@ -41,12 +40,16 @@ import org.harctoolbox.ircore.Pronto;
  */
 public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrSender, ICapture, IReceive {
 
+    static final Logger logger = Logger.getLogger(IrToy.class.getName());
+
+    public static final boolean useDebuggingLeds = false; // For best performance, do not use debugging LEDs.
     public static final String defaultPortName = "/dev/ttyACM0";
-    public static final int defaultBaudRate = 9600;
+    public static final int defaultBaudRate = 115200;
     public static final LocalSerialPort.FlowControl defaultFlowControl = LocalSerialPort.FlowControl.RTSCTS;
+    public static final int defaultTimeout = DEFAULT_BEGIN_TIMEOUT;
 
     private static final int dataSize = 8;
-    private static final int stopBits = 1;
+    private static final LocalSerialPort.StopBits stopBits = LocalSerialPort.StopBits.ONE;
     private static final LocalSerialPort.Parity parity = LocalSerialPort.Parity.NONE;
 
     private static final double oscillatorFrequency = 48000000;
@@ -102,84 +105,37 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     private final static int receivePin = 3;
     private final static int sendingPin = 4;
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        String portName = "/dev/ttyACM0";
-        IrToy toy = null;
-        try {
-            toy = new IrToy(portName);
-            toy.open();
-            if (args.length >= 1 && args[0].equals("-b"))
-                toy.bootloaderMode();
-            else {
-//                //int[] data = new int[]{889, 889, 1778, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 889, 90886};
-//                System.out.println(toy.getVersion());
-//                //String result = toy.selftest();
-//                //System.out.println(result);
-//                toy.setLed(true);
-//                toy.setLedMute(false);
-//                IrSignal signal = new IrSignal("../IrpMaster/data/IrpProtocols.ini", "nec1", "D=122 F=26");
-//                boolean success = toy.sendIr(signal, 10, null);
-//                //String success = toy.selftest();
-//                toy.setPin(powerPin, true);
-//                toy.setPin(receivePin, true);
-//                toy.setPin(sendingPin, true);
-//
-//                System.out.println(success);
-            }
-        } catch (NoSuchPortException ex) {
-            System.err.println("Port for IRToy " + portName + " was not found");
-        } catch (PortInUseException ex) {
-            System.err.println("Port for IRToy in use");
-        } catch (HarcHardwareException | UnsupportedCommOperationException | IOException ex) {
-            System.err.println(ex.getMessage());
-        } finally {
-            if (toy != null) {
-                try {
-                    toy.close();
-                } catch (IOException ex) {
-                }
-            }
-        }
-    }
-
     private boolean stopCaptureRequest = true;
     private String protocolVersion;
     private String version;
-    private int captureMaxSize = defaultCaptureMaxSize;
+    private int captureMaxSize = DEFAULT_CAPTURE_MAXSIZE;
     private int IOdirections = -1;
     private int IOdata = 0;
     private boolean useSignalingLed;
 
-    public IrToy() throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(defaultPortName, defaultBaudRate, defaultFlowControl, defaultBeginTimeout, defaultCaptureMaxSize, false);
+    public IrToy() throws IOException {
+        this(defaultPortName);
     }
 
-    public IrToy(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, defaultFlowControl, defaultBeginTimeout, defaultCaptureMaxSize, false);
+    public IrToy(String portName) throws IOException {
+        this(portName, false);
     }
 
-    public IrToy(String portName, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, defaultFlowControl, timeout, defaultCaptureMaxSize, verbose);
+    public IrToy(String portName, boolean verbose) throws IOException {
+        this(portName, verbose, null);
     }
 
-    public IrToy(String portName, int baudRate, int timeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baudRate, defaultFlowControl, timeout, defaultCaptureMaxSize, verbose);
+    public IrToy(String portName, boolean verbose, Integer timeout) throws IOException {
+        this(portName, verbose, timeout, defaultBaudRate);
     }
 
-    public IrToy(String portName, int beginTimeout, int captureMaxSize, int endingTimeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, defaultBaudRate, defaultFlowControl, beginTimeout, captureMaxSize, verbose);
+    public IrToy(String portName, boolean verbose, Integer timeout, Integer baudRate) throws IOException {
+        this(portName, verbose, timeout, baudRate, DEFAULT_CAPTURE_MAXSIZE, defaultFlowControl);
     }
 
-    public IrToy(String portName, int baud, int beginTimeout, int captureSize, int endingTimeout, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baud, defaultFlowControl, beginTimeout, captureSize, verbose);
-    }
-
-    public IrToy(String portName, int baudRate, LocalSerialPort.FlowControl flowControl, int timeout, int maxLearnLength, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        super(LocalSerialPortRaw.class, portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
-        this.captureMaxSize = maxLearnLength;
+    public IrToy(String portName, boolean verbose, Integer timeout, Integer baudRate, Integer maxLearnLength, LocalSerialPort.FlowControl flowControl)
+            throws IOException {
+        super(LocalSerialPortRaw.class, LocalSerialPort.canonicalizePortName(portName, defaultPortName), verbose, timeout != null ? timeout : defaultTimeout, baudRate, dataSize, stopBits, parity, flowControl);
     }
 
     private void goSamplingMode() throws IOException, HarcHardwareException {
@@ -265,7 +221,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             // Just does not work, see http://dangerousprototypes.com/forum/viewtopic.php?f=29&t=4024&start=23
             throw new HarcHardwareException("Unsupported firmware: " + version);
 
-        useSignalingLed = swMinorVersion >= 2;
+        useSignalingLed = useDebuggingLeds && (swMinorVersion >= 2);
     }
 
     @Override
@@ -317,34 +273,29 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     }
 
     private int[] recv() throws IOException  {
-        int[] result = null;
         try {
-            ArrayList<Integer> array = new ArrayList<>(16);
+            int[] array = new int[captureMaxSize];
+            int size = 0;
             stopCaptureRequest = false;
-            long maxLearnLengthMicroSeconds = captureMaxSize * 1000L;
-            long sum = 0;
             setPin(receivePin, true);
-            while (!stopCaptureRequest && sum <= maxLearnLengthMicroSeconds) { // if leaving here, reset is needed.
+            for (int i = 0; i < captureMaxSize; i++) { // if leaving here, reset is needed.
+                if (stopCaptureRequest)
+                    return null;
                 int val = read2Bytes(); // throws TimeoutException
                 int ms = (int) Math.round(val * period);
-                array.add(ms);
-                sum += ms;
+                array[i] = ms;
+                size++;
                 if (val == 0xffff)
                     // Only way for timeout, 1.4 seconds. Too long for most use cases ... :-\
                     break;
             }
-            if (stopCaptureRequest) {
-                setPin(receivePin, false);
-                return null;
-            }
-            result = new int[array.size()];
-            for (int i = 0; i < array.size(); i++) {
-                result[i] = array.get(i);
-            }
+
+            int[] result = new int[size];
+            System.arraycopy(array, 0, result, 0, size);
+            return result;
         } finally {
             setPin(receivePin, false);
         }
-        return result;
     }
 
     private double getFrequency(int onTimes) throws IOException {
@@ -353,8 +304,6 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         /*int t2 =*/ read2Bytes();
         /*int t3 =*/ read2Bytes();
         int count = read2Bytes();
-        //System.err.println(t1);System.err.println(t2);System.err.println(t3);System.err.println(count);System.err.println(onTimes);
-        //return (2*PICClockFrequency)/((double)(t3 - t1));
         return count/IrCoreUtils.microseconds2seconds(onTimes) ;
     }
 
@@ -363,7 +312,12 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
         // reset, while I do not want any already recorder signals.
         reset(5);
         goSamplingMode();
-        int[] data = recv(); // throws TimeoutException
+        int[] data;
+        try {
+            data = recv(); // throws TimeoutException as per beginTimeout
+        } catch (TimeoutException ex) {
+            return null;
+        }
         if (stopCaptureRequest || data == null)
             return null;
 
@@ -377,8 +331,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             seq = new ModulatedIrSequence(data, frequency);
         } catch (OddSequenceLengthException ex) {
             for (int i = 0; i < data.length; i++)
-                System.err.print(data[i] + " ");
-            System.err.println();
+                logger.log(Level.FINEST, "data[{0}] = {1}", new Object[]{i, data[i]});
             throw new HarcHardwareException("IrToy: Erroneous data received.");
         }
         return seq;
@@ -429,7 +382,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             }
             int noBytes = readByte();
             if (noBytes != emptyBufferSize) {
-                System.err.println("got " + noBytes + " should: " + emptyBufferSize);
+                logger.log(Level.FINE, "got {0} expected {1}", new Object[]{noBytes, emptyBufferSize});
                 succcess = false;
             }
 
@@ -438,11 +391,11 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
                 if (token == transmitByteCountToken) { // 't'
                     int bytesSent = read2Bytes();
                     if (bytesSent != data.length * 2) {
-                        System.err.println("sent " + bytesSent + " should: " + (data.length * 2));
+                        logger.log(Level.FINE, "sent {0} should: {1}", new Object[]{bytesSent, data.length * 2});
                         succcess = false;
                     }
                 } else {
-                    System.err.println("did not get t but " + token);
+                    logger.log(Level.FINE, "did not get t but {0}", token);
                     succcess = false;
                 }
             }
@@ -450,7 +403,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
             if (succcess && transmitNotifyEnabled) {
                 int token = readByte();
                 if (token != transmitCompleteSuccess) {
-                    System.err.println("Status: " + token);
+                    logger.log(Level.FINE, "Status: {0}", token);
                     succcess = false;
                 }
             }

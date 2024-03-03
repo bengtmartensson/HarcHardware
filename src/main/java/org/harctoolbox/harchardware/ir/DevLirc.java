@@ -21,10 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.harctoolbox.devslashlirc.LircDevice;
 import org.harctoolbox.devslashlirc.LircDeviceException;
 import org.harctoolbox.devslashlirc.Mode2LircDevice;
 import org.harctoolbox.devslashlirc.NotSupportedException;
 import org.harctoolbox.harchardware.HarcHardwareException;
+import org.harctoolbox.harchardware.Utils;
 import org.harctoolbox.ircore.IrSequence;
 import org.harctoolbox.ircore.IrSignal;
 import org.harctoolbox.ircore.ModulatedIrSequence;
@@ -50,6 +52,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
                 : new File(DEV).listFiles((File dir, String name) -> name.matches(LIRCDEVPATTERN));
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         File[] candidates = getCandidates();
         for (File f : candidates)
@@ -83,8 +86,15 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
     private boolean stopRequested;
 
     public DevLirc(String deviceName, boolean verbose) throws LircDeviceException {
-        device = new Mode2LircDevice(deviceName);
+        String devName = (deviceName == null || deviceName.equals(Utils.DEFAULT)) ? LircDevice.defaultDeviceName : deviceName;
+        device = new Mode2LircDevice(devName);
         this.verbose = verbose;
+    }
+
+    public DevLirc(String deviceName, boolean verbose, Integer timeout) throws LircDeviceException {
+        this(deviceName, verbose);
+        if (timeout != null)
+            logger.log(Level.WARNING, "Timeout given, but ignored");
     }
 
     public DevLirc(String deviceName) throws LircDeviceException {
@@ -144,6 +154,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
         return sendIr(irSignal, count, (LircTransmitter) transmitter);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public boolean sendIr(IrSignal irSignal, int count, LircTransmitter transmitter) throws HarcHardwareException {
         stopRequested = false;
         try {
@@ -159,7 +170,11 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
             if (verbose)
                 System.err.println("DevLirc sending " + count + " IrSignals: " + irSignal);
 
-            device.setSendCarrier((int) ModulatedIrSequence.getFrequencyWithDefault(irSignal.getFrequency()));
+            try {
+                device.setSendCarrier((int) ModulatedIrSequence.getFrequencyWithDefault(irSignal.getFrequency()));
+            } catch (NotSupportedException ex) {
+                System.err.println("WARNING: Device does not support setting carrier freqency; using driver default.");
+            }
 
             sendIr(irSignal.getIntroSequence());
             for (int i = 0; i < irSignal.repeatsPerCountSemantic(count); i++) {

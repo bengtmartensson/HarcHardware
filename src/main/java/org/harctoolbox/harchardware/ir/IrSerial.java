@@ -17,9 +17,6 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -32,28 +29,28 @@ import org.harctoolbox.harchardware.comm.LocalSerialPort;
  * @param <T>
  */
 public abstract class IrSerial<T extends LocalSerialPort> implements IHarcHardware {
-
     protected boolean verbose;
     private int timeout;
     protected T serialPort;
     private String portName;
     private int baudRate;
     private int dataSize;
-    private int stopBits;
+    private LocalSerialPort.StopBits stopBits;
     private LocalSerialPort.Parity parity;
     private LocalSerialPort.FlowControl flowControl;
     private final Class<T> clazz;
 
-    public IrSerial(Class<T> clazz, String portName, int baudRate, int dataSize, int stopBits, LocalSerialPort.Parity parity, LocalSerialPort.FlowControl flowControl, int timeout, boolean verbose)
-            throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
+    public IrSerial(Class<T> clazz, String portName, boolean verbose, Integer timeout, Integer baudRate, Integer dataSize,
+            LocalSerialPort.StopBits stopBits, LocalSerialPort.Parity parity, LocalSerialPort.FlowControl flowControl)
+            throws IOException {
         this.clazz = clazz;
-        this.portName = portName;
-        this.baudRate = baudRate;
-        this.dataSize = dataSize;
-        this.stopBits = stopBits;
-        this.parity = parity;
-        this.flowControl = flowControl;
-        this.timeout = timeout;
+        this.portName = portName != null ? portName : LocalSerialPort.DEFAULT_PORT;
+        this.baudRate = baudRate != null ? baudRate : LocalSerialPort.DEFAULT_BAUD;
+        this.dataSize = dataSize != null ? dataSize : LocalSerialPort.DEFAULT_DATABITS;
+        this.stopBits = stopBits != null ? stopBits : LocalSerialPort.DEFAULT_STOPBITS;
+        this.parity = parity != null ? parity : LocalSerialPort.DEFAULT_PARITY;
+        this.flowControl = flowControl != null ? flowControl : LocalSerialPort.DEFAULT_FLOWCONTROL;
+        this.timeout = timeout != null ? timeout : LocalSerialPort.DEFAULT_TIMEOUT;
         this.verbose = verbose;
         //open();
     }
@@ -75,7 +72,7 @@ public abstract class IrSerial<T extends LocalSerialPort> implements IHarcHardwa
     /**
      * @param stopBits the stopBits to set
      */
-    public void setStopBits(int stopBits) {
+    public void setStopBits(LocalSerialPort.StopBits stopBits) {
         this.stopBits = stopBits;
     }
 
@@ -151,9 +148,9 @@ public abstract class IrSerial<T extends LocalSerialPort> implements IHarcHardwa
     @SuppressWarnings("unchecked")
     public void open() throws HarcHardwareException, IOException {
         try {
-            Constructor<T> constructor =  clazz.getConstructor(String.class, int.class, int.class, int.class,
-                    LocalSerialPort.Parity.class, LocalSerialPort.FlowControl.class, int.class, boolean.class);
-            serialPort = constructor.newInstance(portName, baudRate, dataSize, stopBits, parity, flowControl, timeout, verbose);
+            Constructor<T> constructor =  clazz.getConstructor(String.class, boolean.class, Integer.class, Integer.class, Integer.class,
+                    LocalSerialPort.StopBits.class, LocalSerialPort.Parity.class, LocalSerialPort.FlowControl.class);
+            serialPort = constructor.newInstance(portName, verbose, timeout, baudRate, dataSize, stopBits, parity, flowControl);
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new RuntimeException("Programming error in IrSerial");
         }

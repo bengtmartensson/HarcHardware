@@ -110,6 +110,7 @@ public class LinuxInputEventCodes {
         return str.toString();
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) {
         System.out.println(generateFallback());
     }

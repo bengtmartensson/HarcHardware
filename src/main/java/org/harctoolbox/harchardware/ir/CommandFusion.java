@@ -17,13 +17,12 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.UnsupportedCommOperationException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.comm.LocalSerialPort;
 import org.harctoolbox.harchardware.comm.LocalSerialPortRaw;
@@ -47,6 +46,9 @@ import org.harctoolbox.ircore.Pronto;
 // It would probably be possible to get the serial timeout to work as beginTimeout, but my tries
 // rendered a very unreliably working device.
 public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawIrSender, ICapture {
+
+    private static final Logger logger = Logger.getLogger(CommandFusion.class.getName());
+
     // USB parameters:
     //    VID = 0403
     //    PID = 6001
@@ -76,47 +78,17 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
 
     private static final int TICK = 25; // micro seconds
 
-    public static final String DEFAULTPORTNAME = "/dev/ttyUSB0";
+    public static final String DEFAULTPORTNAME = "ftdi";///dev/ttyUSB0";
     public static final int DEFAULTBAUDRATE = 115200;
+    public static final int DEFAULT_TIMEOUT = 10000;
+    public static final String COMMAND_FUSION = "Command Fusion";
     private static final int DATASIZE = 8;
-    private static final int STOPBITS = 1;
+    private static final LocalSerialPort.StopBits STOPBITS = LocalSerialPort.StopBits.ONE;
     private static final LocalSerialPort.Parity PARITY = LocalSerialPort.Parity.NONE;
     private static final LocalSerialPort.FlowControl DEFAULTFLOWCONTROL = LocalSerialPort.FlowControl.NONE;
 
-    /**
-     * Demos sending and receiving.
-     * @param args Pronto hex of signal to send, or empty for receiving.
-     */
-    public static void main(String[] args) {
-        String portName = DEFAULTPORTNAME;
-        boolean verbose = true;
-        try (CommandFusion commandFusion = new CommandFusion(portName, verbose)) {
-            commandFusion.open();
-            System.out.println("Version: " + commandFusion.getVersion());
-            if (args.length > 0) {
-                IrSignal irSignal = Pronto.parse(args);
-                boolean success = commandFusion.sendIr(irSignal, 1, null);
-                System.out.println(success ? "Sending succeeded" : "Sending failed");
-            } else {
-                System.out.println("Send an IR signal to the CF!");
-                ModulatedIrSequence seq = commandFusion.capture();
-                if (seq == null) {
-                    System.err.println("No input");
-                } else {
-                    System.out.println(seq);
-                    //DecodeIR.invoke(seq);
-                }
-            }
-        } catch (InvalidArgumentException | Pronto.NonProntoFormatException | NoSuchPortException | PortInUseException | UnsupportedCommOperationException | IOException | HarcHardwareException ex) {
-            ex.printStackTrace();
-            System.exit(1);
-        }
-        System.exit(0);
-    }
-
     private static byte[] encode(IrSignal irSignal, int count) {
-        if (irSignal == null)
-            throw new NullPointerException("irSignal cannot be null");
+        Objects.requireNonNull(irSignal, "irSignal cannot be null");
         String data = "P0" + Integer.toString(PORTID) + ":RAW:" + Pronto.toString(irSignal.toOneShot(count));
         return encode(SENDCOMMAND, data);
     }
@@ -129,6 +101,8 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     // 2-4 = IRL (signifying we are communicating with an IR Learner)
     // 5-7 = The command name. See below for available commands.
     private static Payload decode(byte[] data, Byte token) {
+        if (data == null)
+            return null;
         int index = 0;
         for (int i = 0; i < INTROBYTES.length; i++) {
             if (data[i] != INTROBYTES[i])
@@ -188,25 +162,25 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
     private boolean stopRequested = false;
     private String versionString = null;
 
-    public CommandFusion() throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(DEFAULTPORTNAME, DEFAULTBAUDRATE, false);
+    public CommandFusion() throws IOException {
+        this(DEFAULTPORTNAME);
     }
 
-    public CommandFusion(String portName) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, DEFAULTBAUDRATE, false);
+    public CommandFusion(String portName) throws IOException {
+        this(portName, false);
     }
 
-    public CommandFusion(String portName, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, DEFAULTBAUDRATE, verbose);
+    public CommandFusion(String portName, boolean verbose) throws IOException {
+        this(portName, verbose, null);
     }
 
-    public CommandFusion(String portName, int baudRate, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        super(LocalSerialPortRaw.class, portName, baudRate, DATASIZE, STOPBITS, PARITY, DEFAULTFLOWCONTROL, -1/*beginTimeout*/, verbose);
+    public CommandFusion(String portName, boolean verbose, Integer timeout) throws IOException {
+        super(LocalSerialPortRaw.class, LocalSerialPort.canonicalizePortName(portName, DEFAULTPORTNAME), verbose, DEFAULT_TIMEOUT, DEFAULTBAUDRATE, DATASIZE, STOPBITS, PARITY, DEFAULTFLOWCONTROL);
     }
 
     // Necessary for the HardwareManager. Do not "clean up".
-    public CommandFusion(String portName, int baudRate, int timeoutNotUsed, boolean verbose) throws NoSuchPortException, PortInUseException, UnsupportedCommOperationException, IOException {
-        this(portName, baudRate, verbose);
+    public CommandFusion(String portName, boolean verbose, Integer timeoutNotUsed, Integer baudRate) throws IOException {
+        this(portName, verbose, baudRate);
     }
 
     /**
@@ -243,9 +217,9 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         }
     }
 
-    // Untested
     /**
      * Sends an IR signal from the <a href="http://www.commandfusion.com/irdatabase">built-in, proprietary data base</a>.
+     * Not tested.
      *
      * @param deviceType
      * @param codeset

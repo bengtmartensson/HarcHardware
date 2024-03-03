@@ -17,25 +17,20 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.harctoolbox.harchardware.HarcHardwareException;
 import org.harctoolbox.harchardware.ICommandLineDevice;
 import org.harctoolbox.harchardware.IHarcHardware;
 import org.harctoolbox.harchardware.Utils;
@@ -50,12 +45,19 @@ import org.harctoolbox.ircore.ModulatedIrSequence;
 import org.harctoolbox.ircore.Pronto;
 import org.harctoolbox.irp.IrpUtils;
 
+/**
+ * This class implements the GlobalCache TCP Unified TCP API (Version 1.1),
+ * according to <a href="https://www.globalcache.com/files/docs/API-GC-UnifiedTCPv1.1.pdf">the official API documentation</a>.
+ * This covers the models GC-100, iTach, Flex and Global Connect.
+ */
 public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, ITransmitter, ICapture, IWeb {
+
+    private static final Logger logger = Logger.getLogger(GlobalCache.class.getName());
 
     private final static int smallDelay = 10; // ms
     private final static int gcPort = 4998;
     private final static int gcFirstSerialPort = 4999;
-    public  final static String defaultGlobalCacheIP = "192.168.1.70";
+    public  final static String DEFAULT_IP = "192.168.1.70";
     public  final static int defaultGlobalCachePort = 1;
     public  final static String sendIrPrefix = "sendir";
     private final static int defaultSocketTimeout = 2000;
@@ -65,11 +67,14 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     public  final static int connectorsPerModule = 3;
     public  final static int maxCompressedLetters = 15;
 
-    private final static String apiAddressFragment = "/api/v1/";
     /**
      * GlobalCache default connector
      */
     private final static int defaultConnector = 1;
+
+    public static String expandIP(String IP) {
+        return IP == null || IP.equals(Utils.DEFAULT) ? DEFAULT_IP : IP;
+    }
 
     private static String camelCase2uppercase(String cc) {
         StringBuilder result = new StringBuilder(32);
@@ -95,7 +100,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     private static String gcCompressedJoiner(int[]intro, int[]repeat) {
-        LinkedHashMap<String, Character> index = new LinkedHashMap<>(32);
+        Map<String, Character> index = new LinkedHashMap<>(32);
         return gcCompressedJoiner(intro, index) + gcCompressedJoiner(repeat, index);
     }
 
@@ -158,8 +163,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return listenBeacon(beaconTimeout);
     }
 
-    public static AmxBeaconListener newListener(AmxBeaconListener.Callback callback, boolean debug) {
-        AmxBeaconListener abl = new AmxBeaconListener(callback,  "-Make", "GlobalCache", debug);
+    public static AmxBeaconListener newListener(AmxBeaconListener.Callback callback) {
+        AmxBeaconListener abl = new AmxBeaconListener(callback,  "-Make", "GlobalCache");
         abl.start();
         return abl;
     }
@@ -196,11 +201,13 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return new IrSignal(durations, repIndex - 1, durations.length - repIndex + 1, frequency);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void usage() {
         System.err.println("Usagex:");
         System.err.println("GlobalCache [options] <command> [<argument>]");
         System.err.println("where options=-# <count>,-h <hostname>,-c <connector>,-m <module>,-b <baudrate>,-t <timeout>,-p <sendirstring>,-v,-B,-j");
-        System.err.println("and command=send_ir,send_serial,listen_serial,set_relay,get_devices,get_version,set_blink,[set|get]_serial,[set|get]_ir,[set|get]_net,[get|set]_state,get_learn,ccf");
+        System.err.println("and command=send_ir" /*,send_serial,listen_serial,*/
+                + ",set_relay,get_devices,get_version,set_blink,[set|get]_serial,[set|get]_ir,[set|get]_net,[get|set]_state,get_learn,ccf");
         doExit(IrpUtils.EXIT_USAGE_ERROR);
     }
 
@@ -208,9 +215,11 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         System.exit(exitcode);
     }
 
+    // Probably not entirely working...
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String[] args) throws InvalidArgumentException {
         //String str = "sendir,4:1,0,38380,1,69,347,173,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,65,22,22,22,22,22,65,22,22,22,22,22,22,22,22,22,22,22,22,22,65,22,22,22,65,22,65,22,65,22,65,22,65,22,65,22,1527,347,87,22,3692";
-        String hostname = defaultGlobalCacheIP;
+        String hostname = DEFAULT_IP;
         int connector = 1;
         int module = 2;
         int count = 1;
@@ -223,7 +232,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         int arg_i = 0;
         int timeout = defaultSocketTimeout;
         String parserFood = null;
-        boolean json = false;
 
         if (args.length == 0)
             usage();
@@ -261,10 +269,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                         break;
                     case "-B":
                         beacon = true;
-                        arg_i++;
-                        break;
-                    case "-j":
-                        json = true;
                         arg_i++;
                         break;
                     case "-p":
@@ -308,21 +312,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
         try {
             gc = new GlobalCache(hostname, verbose, timeout);
-
-            if (json) {
-                try {
-                    JsonObject obj = gc.getJsonVersion();
-                    System.out.println(obj);
-                    System.out.println(obj.get("firmwareVersion").asString());
-                    System.out.println(gc.getJsonNetwork());
-                    System.out.println(gc.getJsonSsid());
-                    System.out.println(gc.getJsonConnectors());
-                    System.out.println(gc.getJsonFiles());
-                } catch (IOException ex) {
-                    System.err.println(ex.getMessage());
-                }
-                System.exit(0);
-            }
 
             if (args.length - 1 < arg_i)
                 System.exit(IrpUtils.EXIT_SUCCESS);
@@ -385,32 +374,31 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                         output = gc.sendIr(args[arg_i + 1]) ? "ok" : "error";
                     } else {
                         StringBuilder ccf = new StringBuilder(6 * args.length);
-                        for (int i = arg_i + 1; i < args.length; i++) {
+                        for (int i = arg_i + 1; i < args.length; i++)
                             ccf.append(' ').append(args[i]);
-                        }
 
-                        output = gc.sendIr(ccf.toString(), count, module, connector) ? "ok" : "error";
+                        IrSignal irSignal = Pronto.parse(ccf.toString());
+                        output = gc.sendIr(irSignal, count, module, connector) ? "ok" : "error";
                     }   break;
-                case "send_serial":
-                    StringBuilder transmit = new StringBuilder(2 * args.length);
-                    for (int i = arg_i + 1; i < args.length; i++) {
-                        transmit.append(' ').append(args[i]);
-                    }
+                // Currently broken
+                //case "send_serial":
+                //    StringBuilder transmit = new StringBuilder(2 * args.length);
+                //    for (int i = arg_i + 1; i < args.length; i++) {
+                //        transmit.append(' ').append(args[i]);
+                //    }
 
-                    //output = gc.sendStringCommand(module, transmit, 0);
-                    break;
+                //      output = gc.sendStringCommand(module, transmit, 0);
+                //    break;
                 case "stop_ir":
                     gc.stopIr(module, connector);
                     break;
                 case "get_learn":
                     ModulatedIrSequence seq = gc.capture();
                     System.out.println(seq);
-//                    if (seq != null) {
-//                        System.out.println(DecodeIR.DecodedSignal.toPrintString(DecodeIR.decode(seq)));
-//                    }
                     break;
-                case "listen_serial":
-                    System.err.println("Press Ctrl-C to interrupt.");
+                    // Currently broken
+                    //case "listen_serial":
+                    // System.err.println("Press Ctrl-C to interrupt.");
                     // Never returns
                     //gc.listenStringCommands(module);
                     //} else if (cmd.equals("ccf")) {
@@ -418,13 +406,13 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                     //    for (int i = arg_i + 1; i < args.length; i++)
                     //        s = s + args[i];
                     //    System.out.println(gc2Ccf(s));
-                    break;
+                    //break;
                 default:
                     usage();
                     break;
             }
             gc.close();
-        } catch (HarcHardwareException e) {
+        } catch (NoSuchTransmitterException e) {
             System.err.println(e.getMessage());
         } catch (UnknownHostException e) {
             System.err.println("Host \"" + hostname + "\" does not resolve.");
@@ -432,11 +420,6 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         } catch (IOException e) {
             System.err.println("IOException occured.");
             System.exit(1);
-//        } catch (IrpException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-        //} catch (NoSuchTransmitterException ex) {
-        //    Logger.getLogger(GlobalCache.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Pronto.NonProntoFormatException ex) {
             Logger.getLogger(GlobalCache.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -449,14 +432,12 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     private boolean verbose = true;
     private String[] getdevicesResult = null;
 
-    //private GlobalCacheModel globalCacheModel;
-
     private TcpSocketChannel tcpSocketChannel;
     private SerialPort[] serialPorts;
 
-    private ArrayList<Integer> irModules;
-    private ArrayList<Integer> serialModules;
-    private ArrayList<Integer> relayModules;
+    private List<Integer> irModules;
+    private List<Integer> serialModules;
+    private List<Integer> relayModules;
 
     private boolean compressed = false;
 
@@ -481,30 +462,44 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
      */
     private int sendIndex;
 
-    public GlobalCache(String hostIp, boolean verbose, int timeout, boolean compressed) throws UnknownHostException, IOException {
-        //globalCacheModel = GlobalCacheModel.newGlobalCacheModel(model);
-        this.timeout = timeout;
-        this.hostIp = (hostIp != null) ? hostIp : defaultGlobalCacheIP;
-        inetAddress = InetAddress.getByName(hostIp);
+    public GlobalCache(InetAddress inetAddress, boolean verbose, Integer timeout, boolean compressed) throws IOException {
+        this.timeout = timeout != null ? timeout : defaultSocketTimeout;
+        this.hostIp = inetAddress.getHostAddress();
+        this.inetAddress = inetAddress;
         this.verbose = verbose;
         this.compressed = compressed;
         open();
     }
 
-    public GlobalCache(String hostIp, boolean verbose, int timeout) throws UnknownHostException, IOException {
+    public GlobalCache(String hostIp, boolean verbose, Integer timeout, boolean compressed) throws UnknownHostException, IOException {
+        this(InetAddress.getByName(expandIP(hostIp)), verbose, timeout, compressed);
+    }
+
+    public GlobalCache(InetAddress inetAddress, Integer portIsNotUsed, boolean verbose, Integer timeout) throws IOException {
+        this(inetAddress, verbose, timeout, false);
+    }
+
+    public GlobalCache(InetAddress inetAddress, boolean verbose, Integer portNumber, Integer timeout) throws IOException {
+        // ignores portNumber
+        this(inetAddress, verbose, timeout, false);
+        if (portNumber != null)
+            logger.log(Level.WARNING, "Explicit port (=({0}) ignored.", portNumber);
+    }
+
+    public GlobalCache(String hostIp, boolean verbose, Integer timeout) throws UnknownHostException, IOException {
         this(hostIp, verbose, timeout, false);
     }
 
     public GlobalCache(String hostname) throws UnknownHostException, IOException {
-        this(hostname, false, defaultSocketTimeout, false);
+        this(hostname, false);
     }
 
     public GlobalCache(String hostname, boolean verbose, boolean compressed) throws UnknownHostException, IOException {
-        this(hostname, verbose, defaultSocketTimeout, compressed);
+        this(hostname, verbose, null, compressed);
     }
 
     public GlobalCache(String hostname, boolean verbose) throws UnknownHostException, IOException {
-        this(hostname, verbose, defaultSocketTimeout, false);
+        this(hostname, verbose, null);
     }
 
     @Override
@@ -594,7 +589,11 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
+    @SuppressWarnings("null")
     public final void open() throws UnknownHostException, IOException {
+        if (tcpSocketChannel != null)
+            return; // already open
+
         tcpSocketChannel = new TcpSocketChannel(this.hostIp, gcPort, timeout,
                 verbose, TcpSocketPort.ConnectionMode.keepAlive);
         getdevicesResult = sendCommand("getdevices", -1);
@@ -614,8 +613,10 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
 
     @Override
     public synchronized void close() throws IOException {
-        if (tcpSocketChannel != null)
+        if (tcpSocketChannel != null) {
             tcpSocketChannel.close(true);
+            tcpSocketChannel = null;
+        }
         getdevicesResult = null;
     }
 
@@ -632,7 +633,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         this.compressed = compressed;
     }
 
-    @SuppressWarnings("SleepWhileHoldingLock")
+    @SuppressWarnings({"SleepWhileHoldingLock", "UseOfSystemOutOrSystemErr"})
     private synchronized String[] sendCommand(String cmd, int noLines, int delay, String expectedFirstLine) throws IOException {
         if (verbose && cmd != null)
             System.err.println("Sending command \"" + cmd + "\" to GlobalCache (" + hostIp + ")");
@@ -657,23 +658,16 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         if (noLines >= 0) {
             result = new String[noLines];
             for (int i = 0; i < noLines; i++) {
-                result[i] = tcpSocketChannel.readString();// may hang
-               if (verbose)
-                    System.err.println(result[i]);
+                result[i] = tcpSocketChannel.readString();// throws SocketTimeoutException after so_timeout
                if (i == 0 && expectedFirstLine != null)
                     if (!result[0].startsWith(expectedFirstLine)) {
-                        System.err.println("Expected \"" + expectedFirstLine + "\", returning immediately.");
+                        logger.log(Level.WARNING, "Expected \"{0}\", returning immediately.", expectedFirstLine);
                         break;
                     }
-
-                //while (tcpSocketChannel.getIn().ready()) {
-                //    String resp = tcpSocketChannel.getIn().readLine();
-                //    result.append('\n').append(resp);
-                //}
             }
         } else {
-            ArrayList<String> array = new ArrayList<>(8);
-            String lineRead = tcpSocketChannel.readString(); // may hang
+            List<String> array = new ArrayList<>(8);
+            String lineRead = tcpSocketChannel.readString(); // throws SocketTimeoutException after so_timeout
             if (lineRead != null) {
                 array.add(lineRead);
                 while (tcpSocketChannel.getBufferedIn().ready()) {
@@ -742,31 +736,19 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return sendIr(code, count, gct.module, gct.port);
     }
 
-    public boolean sendIr(String ccf, int count, int module, int connector) throws Pronto.NonProntoFormatException, InvalidArgumentException, NoSuchTransmitterException, IOException {
-        return sendIr(Pronto.parse(ccf), count, module, connector);
-    }
-
-    public boolean sendCcf(String ccfString, int count, Transmitter transmitter) throws Pronto.NonProntoFormatException, InvalidArgumentException, NoSuchTransmitterException, IOException {
-        GlobalCacheIrTransmitter gctransmitter = newGlobalCacheIrTransmitter(transmitter);
-        return sendIr(ccfString, count, gctransmitter.module, gctransmitter.port);
-    }
-
-    public boolean sendCcfRepeat(String ccfString, Transmitter transmitter) throws IOException, NoSuchTransmitterException, Pronto.NonProntoFormatException, InvalidArgumentException {
-        GlobalCacheIrTransmitter gctransmitter = newGlobalCacheIrTransmitter(transmitter);
-        return sendIr(ccfString, repeatMax, gctransmitter.module, gctransmitter.port);
-    }
-
     public String[] getDevices() {
         return getdevicesResult.clone();
     }
 
+    // Meaningful only on GC-100.
     public String getVersion(int module) throws IOException {
         return sendCommand("getversion," + module);
     }
 
     @Override
     public String getVersion() throws IOException {
-        return sendCommand("getversion");
+        String answer = sendCommand("getversion");
+        return answer.replaceFirst("version,", "");
     }
 
     public String getNet() throws IOException {
@@ -781,9 +763,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return sendCommand("get_IR," + transmitterAddress(module, connector));
     }
 
-    private ArrayList<Integer> getModules(String moduleType) {
-        //String[] dvs = getdevicesResult.split("\n");
-        ArrayList<Integer> modules = new ArrayList<>(5);
+    private List<Integer> getModules(String moduleType) {
+        List<Integer> modules = new ArrayList<>(5);
         for (String devicesResult : getdevicesResult) {
             String[] s = devicesResult.split(" ");
             if (s.length > 1 && s[1].startsWith(moduleType))
@@ -802,15 +783,15 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         throw new IllegalArgumentException("Non-existing module: " + moduleNumber);
     }
 
-    public final ArrayList<Integer> getIrModules() {
+    public final List<Integer> getIrModules() {
         return getModules("IR");
     }
 
-    public final ArrayList<Integer> getSerialModules() {
+    public final List<Integer> getSerialModules() {
         return getModules("SERIAL");
     }
 
-    public final ArrayList<Integer> getRelayModules() {
+    public final List<Integer> getRelayModules() {
         return getModules("RELAY");
     }
 
@@ -865,6 +846,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return toggleState(defaultRelayModule, connector);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public boolean setState(int module, int connector, int state) throws IOException, NoSuchTransmitterException {
         String result = sendCommand("setstate," + transmitterAddress(module, connector) + "," + (state == 0 ? 0 : 1));
         if (verbose) {
@@ -906,6 +888,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return pulseState(defaultRelayModule, connector);
     }
 
+    // GC-100 only
     public void setBlink(int arg) throws IOException {
         sendCommand("blink," + arg, 0);
     }
@@ -916,7 +899,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
     }
 
     @Override
-    public synchronized ModulatedIrSequence capture() throws HarcHardwareException, InvalidArgumentException {
+    // Only iTach, Flex GlobalConnect
+    public synchronized ModulatedIrSequence capture() throws InvalidArgumentException {
         try {
             String[] result = sendCommand("get_IRL", 1, smallDelay, null);
             if (result[0].equals("IR Learner Enabled"))
@@ -940,47 +924,8 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         return response.startsWith("IR Learner Disabled");
     }
 
-    private InputStreamReader getJsonReader(String thing) throws IOException {
-        URL url = new URL("http", hostIp, apiAddressFragment + thing);
-        URLConnection urlConnection = url.openConnection();
-        return new InputStreamReader(urlConnection.getInputStream(), Charset.forName("US-ASCII"));
-    }
-
-    private JsonObject getJsonObject(String thing) throws IOException {
-        return JsonObject.readFrom(getJsonReader(thing));
-    }
-
-    private JsonArray getJsonArray(String thing) throws IOException {
-        return JsonArray.readFrom(getJsonReader(thing));
-    }
-
-    private JsonObject getJsonVersion() throws IOException {
-        return getJsonObject("version");
-    }
-
-    private JsonObject getJsonNetwork() throws IOException {
-        return getJsonObject("network");
-    }
-
-    private JsonArray getJsonSsid() throws IOException {
-        try {
-            return getJsonArray("network/ssid");
-        } catch (java.lang.UnsupportedOperationException ex) {
-            // Workaround for bug: on non-wlan units, does not return an array, but the result of network.
-            return null;
-        }
-    }
-
-    private JsonArray getJsonConnectors() throws IOException {
-        return getJsonArray("connectors");
-    }
-
-    private JsonArray getJsonFiles() throws IOException {
-        return getJsonArray("files");
-    }
-
     @Override
-    public void setBeginTimeout(int integer) throws IOException {
+    public void setBeginTimeout(int timeout) throws IOException {
         tcpSocketChannel.setTimeout(timeout);
     }
 
