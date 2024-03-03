@@ -83,6 +83,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void sendString(String cmd) throws IOException {
         if (verbose)
             System.err.println("LocalSerialPortBuffered.sendString: Sent '" + escapeCommandLine(cmd) + "'.");
@@ -108,6 +109,7 @@ public final class LocalSerialPortBuffered extends LocalSerialPort implements IC
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public String readString(boolean wait) throws IOException {
         if (!(wait || bufferedInStream.ready()))
             return null;

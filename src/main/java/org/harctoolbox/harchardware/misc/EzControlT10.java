@@ -69,8 +69,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
                 * (((qMin & 8) == 8) ? 256 : 1);
 
         int m = quartersecs/mult;
-        int res = (qMin << 4) + m;
-        return res;
+        return (qMin << 4) + m;
     }
 
     private static int encodeCommand(EZSystem system, Command cmd) {
@@ -950,6 +949,7 @@ public final class EzControlT10 implements IHarcHardware, IWeb {
         return doc;
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void generateXml() {
         XmlUtils.printDOM(System.out, xmlConfig());
     }

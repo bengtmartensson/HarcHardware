@@ -191,6 +191,7 @@ public class DevLirc implements IRawIrSender, IReceive, ICapture, ITransmitter, 
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public IrSequence receive() throws HarcHardwareException, OddSequenceLengthException {
         int[] data;
         try {

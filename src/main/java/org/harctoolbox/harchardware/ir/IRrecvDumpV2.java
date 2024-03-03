@@ -54,8 +54,7 @@ public class IRrecvDumpV2 implements IHarcHardware, IReceive, Closeable {
             micros[i] = Integer.parseInt(data[i]);
 
         micros[data.length] = DUMMY_ENDING_GAP;
-        IrSequence irSequence = new IrSequence(micros);
-        return irSequence;
+        return new IrSequence(micros);
     }
 
     private final LocalSerialPortBuffered serialPort;

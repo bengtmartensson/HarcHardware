@@ -202,6 +202,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         }
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void fetchVersion() throws IOException, HarcHardwareException {
         send(encode(VERSIONCOMMAND, "", QUERYTOKEN));
         byte[] response = readUntilTwoEndTokens();
@@ -250,6 +251,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         return expect(SENDCOMMAND, "") == Status.OK;
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private Status expect(String command, String data) throws IOException {
         byte[] response = readUntilTwoEndTokens();// serialPort.readBytes(13 + data.length());
         if (response == null)
@@ -287,6 +289,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         return result;
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void send(byte[] buf) throws IOException {
         if (verbose) {
             Payload payload = decode(buf, null);
@@ -350,6 +353,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         return modulatedIrSequence;
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private ModulatedIrSequence readCapture() throws IOException, OddSequenceLengthException, InvalidArgumentException {
         //IR Learner will send back a RIR reply with data in the format of IRCODE:<irdata>
         byte[] response = readUntilTwoEndTokens();
@@ -390,8 +394,7 @@ public class CommandFusion extends IrSerial<LocalSerialPortRaw> implements IRawI
         for (int i = 0; i < data.length; i++)
             data[i] = durations.get(i);
 
-        ModulatedIrSequence result = new ModulatedIrSequence(data, frequency, -1.0);
-        return result;
+        return new ModulatedIrSequence(data, frequency, -1.0);
     }
 
     @Override

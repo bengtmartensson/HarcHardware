@@ -108,7 +108,7 @@ public class CommandTransmit extends AbstractCommand {
         commandLineArgs.assertNonNullClass();
 
         if (file != null) {
-            if (remote != null || command != null || protocol != null || nameEngine != null || args.size() > 0)
+            if (remote != null || command != null || protocol != null || nameEngine != null || !args.isEmpty())
                 throw new UsageException("--file cannot be combined with any other option");
             return parseFile(out, commandLineArgs, hardware);
         }

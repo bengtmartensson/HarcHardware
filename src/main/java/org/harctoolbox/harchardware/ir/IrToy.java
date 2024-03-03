@@ -435,8 +435,7 @@ public final class IrToy extends IrSerial<LocalSerialPortRaw> implements IRawIrS
     public String selftest() throws IOException {
         reset(5);
         send(cmdSelfTest);
-        String ver = readString(lengthSelftestVersionString);
-        return ver;
+        return readString(lengthSelftestVersionString);
     }
 
     public void bootloaderMode() throws IOException {

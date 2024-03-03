@@ -31,6 +31,7 @@ import java.util.Set;
  * This class contains some static stuff allowing access to the Linux keycodes in input-event-codes.h.
  * Presently, it runs on Linux only. We leave it as an exercise to the reader to make it portable.
  */
+@SuppressWarnings("CallToPrintStackTrace")
 public class LinuxInputEventCodes {
 
     private static final String linuxFilename = "/usr/include/linux/input-event-codes.h";
@@ -76,9 +77,9 @@ public class LinuxInputEventCodes {
 
     private static Integer parseValue(String s) {
         if (s.startsWith("0x"))
-            return Integer.parseInt(s.substring(2), 16);
+            return Integer.valueOf(s.substring(2), 16);
         if (s.matches("\\d+"))
-            return Integer.parseInt(s);
+            return Integer.valueOf(s);
         if (s.matches("\\(.*\\)"))
             return parseValue(s.substring(1,s.length()-1));
         if (s.contains("+")) {

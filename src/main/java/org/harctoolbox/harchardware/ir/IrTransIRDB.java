@@ -39,6 +39,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
                 + "/send.htm?remote=" + remote + "&command=" + command + "&led=" + Led.ledChar(led);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private static void usage(int exitstatus) {
         System.err.println("Usage:");
         System.err.println("\tIrTrans [-v][-h <hostname>] -r [<remotename>]");
@@ -50,6 +51,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
         System.exit(exitcode);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public static void main(String args[]) {
         boolean verbose = false;
         String IrTransHost = DEFAULT_IP;
@@ -129,7 +131,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
         this(InetAddress.getByName(hostname));
     }
 
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "UseOfSystemOutOrSystemErr"})
     private String[] getTable(String str) throws IOException, NumberFormatException {
         if (verbose)
             System.err.println("Sending command `" + str + "0' to IrTrans");

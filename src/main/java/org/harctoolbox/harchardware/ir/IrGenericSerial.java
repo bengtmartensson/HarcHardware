@@ -77,6 +77,7 @@ public class IrGenericSerial extends IrSerial<LocalSerialPortBuffered> implement
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public synchronized boolean sendIr(IrSignal irSignal, int count, Transmitter transmitter) throws NoSuchTransmitterException, IOException {
         String payload = formatString(irSignal, count);
         serialPort.sendString(payload);

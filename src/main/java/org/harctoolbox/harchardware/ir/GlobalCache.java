@@ -768,7 +768,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
         for (String devicesResult : getdevicesResult) {
             String[] s = devicesResult.split(" ");
             if (s.length > 1 && s[1].startsWith(moduleType))
-                modules.add(Integer.parseInt(devicesResult.substring(7, 8)));
+                modules.add(Integer.valueOf(devicesResult.substring(7, 8)));
         }
         return modules;
     }

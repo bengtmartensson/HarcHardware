@@ -96,6 +96,7 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @param portName Name of serial port to use. Typically something like COM7: (Windows) or /dev/ttyUSB0.
      * @param verbose
      * @param timeout
+     * @param lowerDtrRts
      * @throws java.io.IOException
      * @throws org.harctoolbox.harchardware.comm.NonExistingPortException
      */
@@ -212,6 +213,7 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @throws IOException
      */
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public ModulatedIrSequence capture() throws IOException {
         if (lowerDtrRts)
             enableIrWidgetMode();
@@ -237,8 +239,7 @@ public class IrWidget implements IHarcHardware, ICapture {
                 data[0] = (byte) readByte;
 
                 byte last = (byte) INVALID;
-                long startTime = System.currentTimeMillis();
-                long lastEvent = startTime;
+                long lastEvent = System.currentTimeMillis();
                 stopRequested = false;
                 int bytesRead = 1;
 
@@ -313,6 +314,7 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @return true
      */
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public boolean stopCapture() {
         if (debug > 0)
             System.err.println("captureStop called");
@@ -388,8 +390,7 @@ public class IrWidget implements IHarcHardware, ICapture {
     }
 
     private int pulseDuration(int pulses) {
-        int x = (int) Math.round(IrCoreUtils.seconds2microseconds(pulses / frequency));
-        return x;
+        return (int) Math.round(IrCoreUtils.seconds2microseconds(pulses / frequency));
     }
 
     private int gapDuration(int pulses) {

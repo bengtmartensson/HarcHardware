@@ -39,7 +39,7 @@ public class LircTransmitter extends Transmitter {
         String[] pieces = str.split("\\D+");
         List<Integer> result = new ArrayList<>(8);
         for (String s : pieces)
-            result.add(Integer.parseInt(s));
+            result.add(Integer.valueOf(s));
         return result;
     }
 

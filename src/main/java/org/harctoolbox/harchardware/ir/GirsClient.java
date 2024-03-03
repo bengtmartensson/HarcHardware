@@ -77,15 +77,13 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     public static GirsClient<TcpSocketPort> newInstance(InetAddress inetAddress, Integer portnumber, boolean verbose, Integer timeout) throws UnknownHostException, HarcHardwareException, IOException {
         TcpSocketPort tcp = new TcpSocketPort(inetAddress, portnumber != null ? portnumber : DEFAULT_PORT, timeout != null ? timeout : TcpSocketPort.defaultTimeout, verbose, TcpSocketPort.ConnectionMode.keepAlive);
-        GirsClient<TcpSocketPort> gc = new GirsClient<>(tcp);
-        return gc;
+        return new GirsClient<>(tcp);
     }
 
     public static GirsClient<LocalSerialPortBuffered> newInstance(String portName, boolean verbose, Integer timeout) throws IOException, HarcHardwareException {
         String realPort = LocalSerialPort.canonicalizePortName(portName, DEFAULT_PORTNAME);
         LocalSerialPortBuffered serial = new LocalSerialPortBuffered(realPort, verbose, timeout, DEFAULT_BAUD);
-        GirsClient<LocalSerialPortBuffered> gc = new GirsClient<>(serial);
-        return gc;
+        return new GirsClient<>(serial);
     }
 
     public static String expandIP(String IP) {
@@ -250,6 +248,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
        return sendIr(irSignal, count);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public synchronized boolean sendIr(IrSignal irSignal, int count) throws IOException, HarcHardwareException {
         String payload = formatSendString(irSignal, count);
         hardware.sendString(payload + lineEnding);
@@ -260,6 +259,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void open() throws IOException, HarcHardwareException {
         hardware.open();
         waitFor(OK_STRING, lineEnding, /*delay*/ GIRS_SELFTEST_TIME, /* tries = */ GIRS_R_U_THERE_TRIES);
@@ -306,6 +306,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         throw new HarcHardwareException("Hardware not responding");
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void flushIn() /*throws IOException*/ {
         try {
             while (true) {
@@ -547,8 +548,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             String answer = readString(true);
             if (answer == null)
                 throw new HarcHardwareException("No answer received.");
-            long value = Long.parseLong(answer.split("=")[1]);
-            return value;
+            return Long.parseLong(answer.split("=")[1]);
         } else
             throw new HarcHardwareException("parameters not implemented.");
     }

@@ -83,6 +83,7 @@ public class TcpSocketChannel implements ICommandLineDevice, IBytesCommand, Auto
      *
      * @throws IOException
      */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void connect() throws IOException {
         if (socket == null || !socket.isConnected()) {
             socket = new Socket();
@@ -170,6 +171,7 @@ public class TcpSocketChannel implements ICommandLineDevice, IBytesCommand, Auto
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public String readString(boolean wait) throws IOException {
         if (!wait && !bufferedInStream.ready()) {
             if (verbose)

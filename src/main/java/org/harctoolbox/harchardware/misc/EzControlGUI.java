@@ -516,6 +516,7 @@ public final class EzControlGUI extends javax.swing.JFrame {
         console_TextArea.setText(null);
     }//GEN-LAST:event_clear_console_MenuItemActionPerformed
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
         System.out.println("asfkad");//do_exit();
     }//GEN-LAST:event_formWindowClosed
@@ -534,10 +535,12 @@ public final class EzControlGUI extends javax.swing.JFrame {
 
 }//GEN-LAST:event_t10_address_TextFieldActionPerformed
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void t10_get_timers_ButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_t10_get_timers_ButtonActionPerformed
         System.err.println(EzControlT10.getTimers(t10_address_TextField.getText()));
 }//GEN-LAST:event_t10_get_timers_ButtonActionPerformed
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void t10_get_status_ButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_t10_get_status_ButtonActionPerformed
         System.err.println(EzControlT10.getStatus(t10_address_TextField.getText()));
 }//GEN-LAST:event_t10_get_status_ButtonActionPerformed

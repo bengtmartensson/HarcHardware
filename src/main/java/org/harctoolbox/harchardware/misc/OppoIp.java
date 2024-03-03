@@ -75,9 +75,8 @@ public class OppoIp implements Closeable {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(writer));
-        String output = writer.getBuffer().toString().replaceAll("\n|\r", "");
-        return output;
-    }
+        return writer.getBuffer().toString().replaceAll("\n|\r", "");
+}
 
     /**
      * Just for testing.
@@ -142,6 +141,7 @@ public class OppoIp implements Closeable {
         port = Integer.parseInt(arr[2].trim());
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void signIn() throws TransformerException, IOException {
         udpSocketChannel.sendString(dom2String(mkDom(requestName, signinName, signintype, password, null)));
         String ans = udpSocketChannel.readString();
@@ -150,6 +150,7 @@ public class OppoIp implements Closeable {
         udpSocketChannel.sendString(dom2String(mkDom(ackName, responseAckName, null, null, null)));
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void signOut() throws IOException, TransformerException {
         udpSocketChannel.sendString(dom2String(mkDom(requestName, signoutName, signouttype, null, null)));
         String ans = udpSocketChannel.readString();

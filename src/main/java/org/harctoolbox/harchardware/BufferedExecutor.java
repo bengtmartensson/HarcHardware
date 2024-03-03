@@ -61,7 +61,7 @@ public class BufferedExecutor implements ICommandLineDevice {
 
     @Override
     public boolean ready() throws IOException {
-        return output.size() > 0;
+        return !output.isEmpty();
     }
 
     @Override

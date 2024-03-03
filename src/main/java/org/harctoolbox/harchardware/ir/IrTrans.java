@@ -201,7 +201,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
     }
 
     // TODO: shorten the timeout if host does not respond
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "UseOfSystemOutOrSystemErr"})
     protected String sendCommand(String cmd) throws IOException {
         if (verbose)
             System.err.println("Sending command `" + cmd + "' to IrTrans(" + inetAddress.getCanonicalHostName() + ") using tcp ascii protocol");
@@ -241,6 +241,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
         return sendCommand("Aver");
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     protected boolean getUrl(String url) throws MalformedURLException, IOException {
         if (verbose)
             System.err.println("Getting URL " + url);
@@ -249,6 +250,7 @@ public class IrTrans implements IHarcHardware, IRawIrSender, ITransmitter, IWeb 
         return true;
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     protected boolean sendCommandUdp(String cmd) throws IOException {
         boolean success;
         if (verbose)

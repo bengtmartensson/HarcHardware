@@ -104,6 +104,7 @@ public class TcpSocketPort implements ICommandLineDevice, IBytesCommand, IHarcHa
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void sendString(String str) throws IOException {
         if (tcpSocketChannel.getVerbose())
             System.err.println(">" + str);
@@ -111,6 +112,7 @@ public class TcpSocketPort implements ICommandLineDevice, IBytesCommand, IHarcHa
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public String readString() throws IOException {
         String str = readString(true);
         if (tcpSocketChannel.getVerbose())

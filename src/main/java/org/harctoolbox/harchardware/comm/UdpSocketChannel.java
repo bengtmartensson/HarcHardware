@@ -77,6 +77,7 @@ public class UdpSocketChannel {
         this(InetAddress.getByName(hostIp), portNumber, timeout, verbose);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     private void send(byte[] buf) throws IOException {
         if (verbose)
             System.err.println("Sending command `" + new String(buf, Charset.forName("US-ASCII")) + "' over UDP to " + inetAddress.getCanonicalHostName() + ":" +  portNumber);
@@ -105,6 +106,7 @@ public class UdpSocketChannel {
         return outStream;
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public String readString() throws SocketException, IOException {
         DatagramPacket pack = new DatagramPacket(byteBuffer, byteBuffer.length);
         if (verbose)

@@ -71,6 +71,7 @@ public class UrlPort implements ICommandLineDevice {
     }
 
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void sendString(String payload) throws IOException {
         //try {
             URL url = new URL(protocol, hostIp, portNumber, prefix + payload + suffix);

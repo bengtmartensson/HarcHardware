@@ -292,6 +292,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
     }
 
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     protected void readLoop() throws IOException {
         TcpSocketChannel tcpSocketChannel = new TcpSocketChannel(inetAddress, lircPort,
                 0 /*timeout*/, verbose, TcpSocketPort.ConnectionMode.keepAlive);
@@ -306,6 +307,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
         }
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     protected final String[] sendCommand(String packet, boolean oneWord) throws IOException {
         if (verbose)
             System.err.println("Sending command `" + packet + "' to Lirc@" + inetAddress.getCanonicalHostName());

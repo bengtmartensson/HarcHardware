@@ -47,8 +47,7 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
     private final static Logger logger = Logger.getLogger(BroadlinkParser.class.getName());
 
     public static BroadlinkParser newParser(String str) {
-        BroadlinkParser parser = str.startsWith(Integer.toHexString(IR_TOKEN)) ? new BroadlinkHexParser(str) : new BroadlinkBase64Parser(str);
-        return parser;
+        return str.startsWith(Integer.toHexString(IR_TOKEN)) ? new BroadlinkHexParser(str) : new BroadlinkBase64Parser(str);
     }
 
     public static IrSequence parse(String str) throws InvalidArgumentException {

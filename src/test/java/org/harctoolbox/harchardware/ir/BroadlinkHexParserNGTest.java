@@ -31,6 +31,7 @@ public class BroadlinkHexParserNGTest {
 
     /**
      * Test of toIrSignal method, of class BroadlinkParser.
+     * @throws Exception
      */
     @Test
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
