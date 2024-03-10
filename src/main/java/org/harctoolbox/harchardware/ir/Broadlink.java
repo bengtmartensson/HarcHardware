@@ -17,6 +17,11 @@ this program. If not, see http://www.gnu.org/licenses/.
 
 package org.harctoolbox.harchardware.ir;
 
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import org.harctoolbox.ircore.ModulatedIrSequence;
+
 /**
  * Just a skeleton for the parsing classes. To be fixed later...
  */
@@ -39,6 +44,61 @@ public final class Broadlink /*implements IHarcHardware, IRawIrSender, IReceive 
     public final static int DURATIONS_OFFSET = 4;
     public final static int MIN_ARCTECH_REPEATS = 6;
     public final static double A_PRIOR_MODULATION_FREQUENCY = 38000d;
+
+    public static String broadlinkHexString(byte[] data) {
+        StringBuilder sb = new StringBuilder(4 * data.length);
+        for (byte b : data)
+            sb.append(String.format(HEX_STRING_FORMAT, Byte.toUnsignedInt(b)));
+        return sb.toString();
+    }
+
+    public static String broadlinkHexString(ModulatedIrSequence irSequence, int count) {
+        List<Integer> irData = broadlinkList(irSequence, count);
+        StringBuilder sb = new StringBuilder(4 * irData.size());
+        irData.forEach(chunk -> {
+            sb.append(String.format(HEX_STRING_FORMAT, chunk));
+        });
+        return sb.toString();
+    }
+
+    public static String broadlinkBase64String(ModulatedIrSequence irSequence, int count) {
+        byte[] bytearray = broadlinkData(irSequence, count);
+        return Base64.getEncoder().encodeToString(bytearray);
+    }
+
+    private static List<Integer> broadlinkList(ModulatedIrSequence irSequence, int count) {
+        boolean ir = irSequence.getFrequencyWithDefault() > 0;
+        List<Integer> list = new ArrayList<>(2 * irSequence.getLength());
+        list.add(ir ? IR_TOKEN : RF_433_TOKEN);
+        list.add(ir ? count - 1 : Math.max(count, MIN_ARCTECH_REPEATS) - 1);
+        list.add(0);
+        list.add(0);
+        for (int i = 0; i < irSequence.getLength() - 1; i++) { // ignoring final gap ...
+            double duration = irSequence.get(i);
+            int noTicks = (int) Math.round(duration / TICK);
+            addEntry(list, noTicks);
+        }
+        addEntry(list, ir ? IR_ENDING_TOKEN : RF_433_ENDING_TOKEN); // ... and replacing it with the Broadlink ending token
+        list.set(LENGTH_MSB_POS, list.size() / 256);
+        list.set(LENGTH_LSB_POS, list.size() % 256);
+        return list;
+    }
+
+    private static byte[] broadlinkData(ModulatedIrSequence irSequence, int count) {
+        List<Integer> list = broadlinkList(irSequence, count);
+        byte[] data = new byte[list.size()];
+        for (int i = 0; i < data.length; i++)
+            data[i] = list.get(i).byteValue();
+        return data;
+    }
+
+    private static void addEntry(List<Integer> list, int noTicks) {
+        if (noTicks > 255) {
+            list.add(0);
+            list.add(noTicks / 256);
+        }
+        list.add(noTicks % 256);
+    }
 
     private Broadlink() {
     }
