@@ -432,7 +432,7 @@ public class LircClient implements IHarcHardware, IRemoteCommandIrSender, IIrSen
 
         if (verbose)
             System.err.println("Lirc command " + (status == 0 ? "succeded." : "failed."));
-        return status == 0 && result != null ? result.toArray(new String[result.size()]) : null;
+        return status == 0 && result != null ? result.toArray(new String[0]) : null;
     }
 
     @Override

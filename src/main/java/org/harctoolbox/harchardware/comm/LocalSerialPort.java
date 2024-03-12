@@ -323,6 +323,7 @@ public abstract class LocalSerialPort implements IHarcHardware {
     }
 
     @Override
+    @SuppressWarnings("NoopMethodInAbstractClass")
     public void setDebug(int dbg) {
     }
 

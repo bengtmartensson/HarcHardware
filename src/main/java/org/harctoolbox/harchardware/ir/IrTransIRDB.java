@@ -181,7 +181,7 @@ public class IrTransIRDB extends IrTrans implements IRemoteCommandIrSender {
             inFromServer.close();
             sock.close();
         }
-        return items.toArray(new String[items.size()]);
+        return items.toArray(new String[0]);
     }
 
     @Override

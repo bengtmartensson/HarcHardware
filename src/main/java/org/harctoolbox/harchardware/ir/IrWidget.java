@@ -213,7 +213,7 @@ public class IrWidget implements IHarcHardware, ICapture {
      * @throws IOException
      */
     @Override
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
+    @SuppressWarnings({"UseOfSystemOutOrSystemErr", "empty-statement"})
     public ModulatedIrSequence capture() throws IOException {
         if (lowerDtrRts)
             enableIrWidgetMode();

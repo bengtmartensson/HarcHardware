@@ -93,7 +93,7 @@ public class FramedDevice {
                     String ans = hardware.readString(false);
                     answer.add(ans);
                 }
-                return answer.toArray(new String[answer.size()]);
+                return answer.toArray(new String[0]);
             }
         } catch (InterruptedException ex) {
         }

@@ -675,7 +675,7 @@ public class GlobalCache implements IHarcHardware, IRawIrSender, IIrSenderStop, 
                     array.add(resp);
                 }
             }
-            result = array.toArray(new String[array.size()]);
+            result = array.toArray(new String[0]);
         }
         tcpSocketChannel.close(false);
         return result;

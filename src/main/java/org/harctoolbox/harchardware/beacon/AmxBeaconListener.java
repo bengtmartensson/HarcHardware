@@ -199,6 +199,7 @@ public class AmxBeaconListener {
             callback.func(nodes);
     }
 
+    @SuppressWarnings("deprecation")
     private boolean listenWait(int timeout) {
         if (timeout < 0)
             return false;
