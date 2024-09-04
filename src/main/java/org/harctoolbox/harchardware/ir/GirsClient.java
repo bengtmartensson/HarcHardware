@@ -264,7 +264,10 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
         hardware.open();
         waitFor(OK_STRING, lineEnding, /*delay*/ GIRS_SELFTEST_TIME, /* tries = */ GIRS_R_U_THERE_TRIES);
         hardware.sendString(VERSION_COMMAND + lineEnding);
-        version = hardware.readString(true).trim();
+        String string = hardware.readString(true);
+        if (string == null)
+            throw new HarcHardwareException("Error reading version");
+        version = string.trim();
         if (verbose)
             System.err.println(VERSION_COMMAND + " returned '" + version + "'.");
         hardware.sendString(MODULES_COMMAND + lineEnding);
