@@ -47,6 +47,20 @@ public class BroadlinkBase64ParserNGTest {
     }
 
     /**
+     * Test of toIrSignal method, of class BroadlinkParser.
+     * @throws Exception
+     */
+    @Test
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
+    public void testToIrSignalStop() throws Exception {
+        System.out.println("toIrSignalStop");
+        String in = "stop";
+        BroadlinkParser instance = new BroadlinkBase64Parser(in);
+        IrSignal result = instance.toIrSignal();
+        assertNull(result);
+    }
+
+    /**
      * Test of getName method, of class BroadlinkParser.
      */
     @Test

@@ -81,15 +81,16 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
     public IrSequence toIrSequence(Double dummyGap) throws OddSequenceLengthException {
         if (this.data == null || this.data.length == 0)
             return null;
-        if (!isIr() && ! isRf433()) {
-            logger.log(Level.FINER, "IR signal did not start with 0x{0} or 0x{1}", new Object[]{Integer.toHexString(IR_TOKEN), Integer.toHexString(RF_433_TOKEN)});
-            return null;
-        }
-        int repeats = readdata(REPEAT_POS);
-        int length = 256 * readdata(LENGTH_MSB_POS) + readdata(LENGTH_LSB_POS);
-        List<Integer> durations = new ArrayList<>(length);
-
+   
         try {
+            if (!isIr() && !isRf433()) {
+                logger.log(Level.FINER, "IR signal did not start with 0x{0} or 0x{1}", new Object[]{Integer.toHexString(IR_TOKEN), Integer.toHexString(RF_433_TOKEN)});
+                return null;
+            }
+            int repeats = readdata(REPEAT_POS);
+            int length = 256 * readdata(LENGTH_MSB_POS) + readdata(LENGTH_LSB_POS);
+            List<Integer> durations = new ArrayList<>(length);
+
             int readIndex = DURATIONS_OFFSET;
             while (true) {
                 int chunk = readdata(readIndex);
@@ -105,15 +106,15 @@ public class BroadlinkParser extends AbstractIrParser implements IrSignalParser 
                 if (readIndex >= length + DURATIONS_OFFSET)
                     break;
             }
+
+            IrSequence irSequence = new IrSequence(durations);
+            if (repeats > 0)
+                irSequence.append(irSequence, repeats);
+            return irSequence;
         } catch (IndexOutOfBoundsException ex) {
             logger.log(Level.FINER, "IR data inconsistent");
             return null;
         }
-
-        IrSequence irSequence = new IrSequence(durations);
-        if (repeats > 0)
-            irSequence.append(irSequence, repeats);
-        return irSequence;
     }
 
     @Override
