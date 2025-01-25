@@ -52,8 +52,8 @@ public class CommandCommonOptions extends CommandDecodeParameterOptions {
     @Parameter(names = {"--audio"}, description = "Implies --class IrAudioDevice.")
     private boolean audio = false;
 
-    //@Parameter(names = {"--broadlink"}, description = "Implies --class Broadlink. If --ip is not given, the first devicee found on the LAN will be selected.")
-    //private boolean broadlink = false;
+    @Parameter(names = {"--broadlink"}, description = "Implies --class Broadlink. If --ip is not given, the first devicee found on the LAN will be selected.")
+    private boolean broadlink = false;
 
     @Parameter(names = {"-B", "--begintimeout"}, description = "Set begin timeout (in ms).")
     private Integer beginTimeout = null;
@@ -191,8 +191,8 @@ public class CommandCommonOptions extends CommandDecodeParameterOptions {
             initializeSerial("--devslashlirc", "DevLirc");
         else if (audio)
             initialize("--audio", "IrAudioDevice");
-        //else if (broadlink)
-        //    initialize("--broadlink", "Broadlink");
+        else if (broadlink)
+            initialize("--broadlink", "Broadlink");
         else if (globalCache)
             initializeIP("--globalcache", "GlobalCache");
         else if (irTrans)
