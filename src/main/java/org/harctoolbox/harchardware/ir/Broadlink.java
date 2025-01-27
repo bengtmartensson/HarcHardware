@@ -28,9 +28,13 @@ import com.github.mob41.blapi.pkt.cmd.rm2.SendDataCmdPayload;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.harctoolbox.harchardware.HarcHardwareException;
@@ -51,7 +55,9 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
     private final static Logger logger = Logger.getLogger(Broadlink.class.getName());
 
     private static final int DEFAULT_TIMEOUT = 2000;
-    public static final short DEFAULT_TYPE = BLDevice.DEV_RM_2_PRO_PLUS; // 0x272a; // 0x2712;
+    public static final short DEV_RM_2_PRO = 0x272a; // FIXME
+    public static final short DEV_RM_4_MINI = 0x520c; // FIXME
+    public static final short DEFAULT_TYPE = DEV_RM_2_PRO; //BLDevice.DEV_RM_2_PRO_PLUS; // 0x272a; // 0x2712;
     public static final String DEFAULT_HOST = "broadlink";
     public final static String HEX_STRING_FORMAT = "%02X";
 
@@ -82,7 +88,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
     }
 
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         CommandLineArgs commandLineArgs = new CommandLineArgs();
         argumentParser = new JCommander(commandLineArgs);
@@ -102,8 +108,8 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
 
         if (commandLineArgs.scanDevices) {
             try {
-                BLDevice[] devices = scanDevices();
-                for (BLDevice dev : devices)
+                Collection<Broadlink> devices = scanDevices(commandLineArgs.timeout).values();
+                for (Broadlink dev : devices)
                     System.out.println(new Broadlink(dev));
                 System.exit(IrpUtils.EXIT_SUCCESS);
             } catch (IOException ex) {
@@ -111,19 +117,17 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
             }
         }
 
-        try {
-            Broadlink broadlink; // = new Broadlink(true);
-            if (commandLineArgs.ip != null) {
-                InetAddress inetAddress = InetAddress.getByName(commandLineArgs.ip);
-                broadlink = new Broadlink(commandLineArgs.type, inetAddress, commandLineArgs.mac, commandLineArgs.verbose);
-            } else
-                broadlink = findFirstDevice();
-
+        try (Broadlink broadlink = (commandLineArgs.ip != null && commandLineArgs.type != null)
+                ? new Broadlink(commandLineArgs.type.shortValue(), commandLineArgs.ip, commandLineArgs.mac, commandLineArgs.verbose)
+                : commandLineArgs.ip != null
+                        ? newBroadlink(commandLineArgs.ip, commandLineArgs.timeout)
+                        : newBroadlink()) {
             broadlink.setVerbose(commandLineArgs.verbose);
 
             broadlink.open();
-            if (commandLineArgs.temperature)
+            if (commandLineArgs.temperature) {
                 System.out.println(broadlink.getTemperature());
+            }
 
             if (commandLineArgs.receive) {
                 IrSequence s = broadlink.receive();
@@ -132,35 +136,39 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
 
             if (commandLineArgs.transmit) {
                 double[] data = new double[commandLineArgs.durations.size()];
-                for (int i = 0; i < commandLineArgs.durations.size(); i++)
+                for (int i = 0; i < commandLineArgs.durations.size(); i++) {
                     data[i] = Double.parseDouble(commandLineArgs.durations.get(i));
+                }
 
                 ModulatedIrSequence irSequence = new ModulatedIrSequence(data, A_PRIOR_MODULATION_FREQUENCY);
                 broadlink.sendIr(irSequence, commandLineArgs.count);
             }
-            broadlink.close();
         } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);
         }
     }
 
-    static BLDevice[] scanDevices() throws IOException {
-        return scanDevices(DEFAULT_TIMEOUT);
+    public static Map<InetAddress, Broadlink> scanDevices() throws IOException {
+        return scanDevices(null);
     }
 
-    static BLDevice[] scanDevices(int timeout) throws IOException {
-        BLDevice[] devs = BLDevice.discoverDevices(timeout);
-        return devs;
+    public static Map<InetAddress, Broadlink> scanDevices(Integer timeout) throws IOException {
+        BLDevice[] devs = BLDevice.discoverDevices(timeout == null ? DEFAULT_TIMEOUT : timeout);
+        Map<InetAddress, Broadlink> map = new HashMap<>(8);
+        for (BLDevice dev : devs) {
+            map.put(InetAddress.getByName(dev.getHost()), new Broadlink(dev));
+        }
+        return map;
     }
 
-    public static Broadlink findFirstDevice() throws IOException {
-        return findFirstDevice(DEFAULT_TIMEOUT);
-    }
-
-    private static Broadlink findFirstDevice(int timeout) throws IOException {
-        BLDevice[] devs = BLDevice.discoverDevices(timeout);
-        return devs.length >  0 ? new Broadlink(devs[0]) : null;
-    }
+//    public static Broadlink findFirstDevice() throws IOException {
+//        return findFirstDevice(DEFAULT_TIMEOUT);
+//    }
+//
+//    private static Broadlink findFirstDevice(int timeout) throws IOException {
+//        BLDevice[] devs = BLDevice.discoverDevices(timeout);
+//        return devs.length >  0 ? new Broadlink(devs[0]) : null;
+//    }
 
     public static String expandIP(String IP) {
         return IP == null || IP.equals(Utils.DEFAULT) ? DEFAULT_HOST : IP;
@@ -221,48 +229,83 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
         list.add(noTicks % 256);
     }
 
+    // Factory methods
+    public static Broadlink newBroadlink(String hostname, Integer timeout) throws UnknownHostException, IOException  {
+        Map<InetAddress, Broadlink> devs = scanDevices(timeout);
+        if (devs.isEmpty())
+            return null;
+        if (hostname == null)
+            return devs.values().iterator().next();
+        InetAddress inetAddress = InetAddress.getByName(hostname);
+        return devs.get(inetAddress);
+    }
+
+    public static Broadlink newBroadlink(String hostname) throws IOException {
+        return newBroadlink(hostname, null);
+    }
+
+    /**
+     * Returns "first" Broadlink device found
+     * @return created Broadlink
+     * @throws java.io.IOException
+     */
+    public static Broadlink newBroadlink() throws IOException {
+        return newBroadlink(null);
+    }
+
     private BLDevice dev;
     private boolean verbose;
 
     public Broadlink() throws IOException {
-        this(false);
+        this(false, null);
     }
 
-    public Broadlink(boolean verbose) throws IOException {
-        this(verbose, DEFAULT_TIMEOUT);
+    public Broadlink(BLDevice blDevice, boolean verbose) throws IOException {
+        dev = blDevice;
+        this.verbose = verbose;
+    }
+
+    public Broadlink(BLDevice blDevice) throws IOException {
+        this(blDevice, false);
+    }
+
+    public Broadlink(Broadlink old) throws IOException {
+        this(old.dev, old.verbose);
     }
 
     // Just for compatibility with org.harctoolbox.harchardware.Main
     public Broadlink(boolean verbose, Integer timeout) throws IOException {
-        Broadlink bl = findFirstDevice(timeout != null ? timeout : DEFAULT_TIMEOUT);
+        Broadlink bl = newBroadlink(null, timeout);
         this.dev = bl.dev;
         this.verbose = verbose;
     }
 
-    public Broadlink(String hostname, boolean verbose) throws IOException {
-        this(InetAddress.getByName(hostname), verbose, DEFAULT_TIMEOUT);
-    }
+//    public Broadlink(String hostname, boolean verbose) throws IOException {
+//        this(InetAddress.getByName(hostname), verbose, DEFAULT_TIMEOUT);
+//    }
 
-    public Broadlink(InetAddress inetAddress, boolean verbose, Integer timeout) throws IOException {
-        BLDevice[] devs = scanDevices(timeout != null ? timeout : DEFAULT_TIMEOUT);
-        this.dev = null;
-        this.verbose = false;
-        for (BLDevice d : devs) {
-            if (inetAddress.equals(InetAddress.getByName(d.getHost()))) {
-                this.dev = d;
-                this.verbose = verbose;
-                return;
-            }
-        }
-        throw new IOException("No Broadlink with the address " + inetAddress.toString());
-    }
+//    public Broadlink(InetAddress inetAddress, boolean verbose, Integer timeout) throws IOException {
+//        Map<InetAddress, BLDevice> devs = scanDevices(timeout != null ? timeout : DEFAULT_TIMEOUT);
+//        this.dev = null;
+//        this.verbose = false;
+//        for (BLDevice d : devs) {
+//            if (inetAddress.equals(InetAddress.getByName(d.getHost()))) {
+//                this.dev = d;
+//                this.verbose = verbose;
+//                return;
+//            }
+//        }
+//        throw new IOException("No Broadlink with the address " + inetAddress.toString());
+//    }
 
     // For compatibility with Main()
     public Broadlink(InetAddress inetAddress, Integer port, boolean verbose, Integer timeout) throws IOException {
-        this(inetAddress, verbose, timeout);
+        Broadlink bl = newBroadlink(inetAddress.getHostName(), timeout);
+        this.dev = bl.dev;
+        this.verbose = verbose;
     }
 
-    public Broadlink(short deviceType, InetAddress inetAddress, String mac, boolean verbose) throws IOException {
+    public Broadlink(short deviceType, String host, String mac, boolean verbose) throws IOException {
         switch (deviceType) {
 
             case BLDevice.DEV_RM_2:
@@ -275,16 +318,12 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
             case BLDevice.DEV_RM_2_PRO_PLUS_2:
             case BLDevice.DEV_RM_2_PRO_PLUS_2_BL:
             case BLDevice.DEV_RM_MINI_SHATE:
-                dev = new RM2Device(inetAddress.getHostAddress(), new Mac(mac));
+                dev = new RM2Device(host, new Mac(mac));
                 break;
             default:
                 throw new UnsupportedOperationException("Currently not supported.");
         }
         this.verbose = verbose;
-    }
-
-    Broadlink(BLDevice dev) {
-        this.dev = dev;
     }
 
     @Override
@@ -407,7 +446,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
     public void setEndingTimeout(int integer) throws IOException, HarcHardwareException {
     }
 
-    public double getTemperature() throws Exception {
+    public double getTemperature() throws Exception { // FIXME
         if (!(dev instanceof RM2Device))
             throw new UnsupportedOperationException("Not yet supported.");
 
@@ -440,8 +479,11 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
         @Parameter(names = {"--temperature"}, description = "Read temperature from the Broadlink")
         private boolean temperature = false;
 
+        @Parameter(names = {"--timeout"}, description = "Timeout when discovering devices")
+        private Integer timeout = null;
+
         @Parameter(names = {"-T", "--type"}, description = "Type of Broadlink")
-        private short type = DEFAULT_TYPE;
+        private Integer type = null;
 
         @Parameter(names = {"-v", "--verbose"}, description = "Have some commands executed verbosely")
         private boolean verbose;
