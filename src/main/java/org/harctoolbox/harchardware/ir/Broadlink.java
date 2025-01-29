@@ -23,6 +23,7 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.internal.DefaultConsole;
 import com.github.mob41.blapi.BLDevice;
 import com.github.mob41.blapi.RM2Device;
+import com.github.mob41.blapi.RM4Device;
 import com.github.mob41.blapi.mac.Mac;
 import com.github.mob41.blapi.pkt.cmd.rm2.SendDataCmdPayload;
 import java.io.IOException;
@@ -143,6 +144,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
                 ModulatedIrSequence irSequence = new ModulatedIrSequence(data, A_PRIOR_MODULATION_FREQUENCY);
                 broadlink.sendIr(irSequence, commandLineArgs.count);
             }
+            System.err.println("Nothing to do!!");
         } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);
         }
@@ -153,7 +155,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
     }
 
     public static Map<InetAddress, Broadlink> scanDevices(Integer timeout) throws IOException {
-        BLDevice[] devs = BLDevice.discoverDevices(timeout == null ? DEFAULT_TIMEOUT : timeout);
+        List<BLDevice> devs = BLDevice.discoverDevices(timeout == null ? DEFAULT_TIMEOUT : timeout);
         Map<InetAddress, Broadlink> map = new HashMap<>(8);
         for (BLDevice dev : devs) {
             map.put(InetAddress.getByName(dev.getHost()), new Broadlink(dev));
@@ -308,17 +310,21 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
     public Broadlink(short deviceType, String host, String mac, boolean verbose) throws IOException {
         switch (deviceType) {
 
-            case BLDevice.DEV_RM_2:
-            case BLDevice.DEV_RM_MINI:
-            // ??? case BLDevice.DEV_RM_MINI_3:
-            case BLDevice.DEV_RM_PRO_PHICOMM:
-            case BLDevice.DEV_RM_2_HOME_PLUS:
-            case BLDevice.DEV_RM_2_2HOME_PLUS_GDT:
-            case BLDevice.DEV_RM_2_PRO_PLUS:
-            case BLDevice.DEV_RM_2_PRO_PLUS_2:
-            case BLDevice.DEV_RM_2_PRO_PLUS_2_BL:
-            case BLDevice.DEV_RM_MINI_SHATE:
-                dev = new RM2Device(host, new Mac(mac));
+//            case BLDevice.DEV_RM_2:
+//            case BLDevice.DEV_RM_MINI:
+//            // ??? case BLDevice.DEV_RM_MINI_3:
+//            case BLDevice.DEV_RM_PRO_PHICOMM:
+//            case BLDevice.DEV_RM_2_HOME_PLUS:
+//            case BLDevice.DEV_RM_2_2HOME_PLUS_GDT:
+//            case BLDevice.DEV_RM_2_PRO_PLUS:
+//            case BLDevice.DEV_RM_2_PRO_PLUS_2:
+//            case BLDevice.DEV_RM_2_PRO_PLUS_2_BL:
+//            case BLDevice.DEV_RM_MINI_SHATE:
+            case 0x2712:
+                dev = new RM2Device(deviceType, host, host, new Mac(mac));
+                break;
+            case 0x520c:
+                dev = new RM4Device(deviceType, host, host, new Mac(mac));
                 break;
             default:
                 throw new UnsupportedOperationException("Currently not supported.");
@@ -407,7 +413,7 @@ public final class Broadlink implements IHarcHardware, IRawIrSender, IReceive /*
 
         RM2Device rm2 = (RM2Device) dev;
         boolean success = rm2.enterLearning();
-        if (! success)
+        if (!success)
             throw new HarcHardwareException("Cannot enter learning mode");
         byte[] data = null;
         while (data == null) {

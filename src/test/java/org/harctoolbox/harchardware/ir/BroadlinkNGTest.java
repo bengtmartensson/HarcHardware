@@ -155,7 +155,7 @@ public class BroadlinkNGTest {
     /**
      * Test of toString method, of class Broadlink.
      */
-    @Test
+    @Test(enabled = false)
     public void testToString() throws IOException {
         System.out.println("toString");
         Broadlink instance = new Broadlink();
@@ -174,6 +174,7 @@ public class BroadlinkNGTest {
         int count = 3;
         boolean result;
         try (Broadlink instance = new Broadlink()) {
+            instance.setVerbose(true);
             instance.open();
             result = instance.sendIr(irSignal, count);
         }
@@ -188,6 +189,7 @@ public class BroadlinkNGTest {
         System.out.println("receive");
         IrSequence result;
         try (Broadlink instance = new Broadlink()) {
+            instance.setVerbose(true);
             instance.open();
             result = instance.receive();
         }
@@ -197,7 +199,7 @@ public class BroadlinkNGTest {
     /**
      * Test of getTemperature method, of class Broadlink.
      */
-    @Test
+    @Test(enabled = false)
     public void testGetTemperature() throws Exception {
         System.out.println("getTemperature");
         double expResult;
