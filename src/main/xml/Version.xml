@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE version PUBLIC  "-//harctoolbox.org//version//en" "http://www.harctoolbox.org/dtds/version.dtd">
+<!DOCTYPE version PUBLIC  "-//harctoolbox.org//version//en" "https://www.harctoolbox.org/dtds/version.dtd">
 <!--
 Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2019, 2020, 2022, 2023, 2024, 2025 Bengt Martensson.
 
@@ -28,6 +28,6 @@ You should have received a copy of the GNU General Public License along with thi
     <thirdPartyString>
         HarcHardware uses the following uses the following software components:
         Serial communication is handled by the nrjavaserial library, https://github.com/NeuronRobotics/nrjavaserial, licensed under the LGPL v 2.1 license.
-        Command line decoding is done using the JCommander library by Cédric Beust http://jcommander.org/, licensed under the Apache 2.0 license.
+        Command line decoding is done using the JCommander library by Cédric Beust https://jcommander.org/, licensed under the Apache 2.0 license.
     </thirdPartyString>
 </version>
