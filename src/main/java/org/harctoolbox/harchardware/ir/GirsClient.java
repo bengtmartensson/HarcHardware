@@ -56,6 +56,7 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
     private static final String LCD_COMMAND = "lcd";
     private static final String SET_PARAMETER_COMMAND = "parameter";
     private static final String CAPTURE_MODULENAME = "capture";
+    private static final String RECEIVE_MODULENAME = "receive";
     private static final String PARAMETERS_MODULENAME = "parameters";
     private static final String TRANSMIT_MODULENAME = "transmit";
     private static final String BEGIN_TIMEOUT_PARAMETER_NAME = "beginTimeout";
@@ -123,6 +124,10 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
             setUseReceiveForCapture(! hasCaptureModule());
         } catch (HarcHardwareException ex) {
         }
+    }
+
+    public boolean isUseReceiveForCapture() {
+        return useReceiveForCapture;
     }
 
     @Override
@@ -234,6 +239,14 @@ public class GirsClient<T extends ICommandLineDevice & IHarcHardware>  implement
 
     public boolean hasTransmitModule() {
         return modules.contains(TRANSMIT_MODULENAME);
+    }
+
+    public boolean hasReceiveModule() {
+        return modules.contains(RECEIVE_MODULENAME);
+    }
+
+    public boolean canCapture() {
+        return useReceiveForCapture ? hasReceiveModule() : hasCaptureModule();
     }
 
     /**
