@@ -1,0 +1,9 @@
+#
+# Syntax:
+#	Ethernet-address	IP-number
+#
+#
+
+aa:bb:cc:dd:ee:ff	rpi5
+gg:hh:ii:jj:kk:kk	broadlink
+ll:mm:nn:oo:pp:qq	box

@@ -99,8 +99,7 @@ public class Wol {
             this.ethernetAddress = new EthernetAddress(str);
         } catch (InvalidEthernetAddressException ex) {
             // the argument did not parse as Ethernet address, try as hostname
-            Ethers ethers = pathname == null ? new Ethers() : new Ethers(pathname);
-            String mac = ethers.getMac(str);
+            String mac = Ethers.getEtherAddress(str, pathname);
             try {
                 this.ethernetAddress = new EthernetAddress(mac);
             } catch (InvalidEthernetAddressException ex1) {

@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,13 +41,32 @@ public class Ethers {
     public final static String defaultPathname = System.getProperty("os.name").startsWith("Windows")
             ? System.getenv("WINDIR") + File.separator + "ethers"
             : "/etc/ethers";
+    private static Ethers instance = null;
 
+    /**
+     * Returns the Ethernet address (MAC) of the host given as argument, using the filename as ethere data base.
+     * @param hostname
+     * @param ethersPathname Path to ethers data base. If null, use system default.
+     * @return Ethernet address as (un-interpreted) string.
+     * @throws org.harctoolbox.harchardware.misc.Ethers.MacAddressNotFound If not found.
+     * @throws IOException Problems with the ethers data base.
+     */
     public static String getEtherAddress(String hostname, File ethersPathname) throws MacAddressNotFound, IOException {
-        return (new Ethers(ethersPathname)).getMac(hostname);
+        File ethers = ethersPathname == null ? new File(defaultPathname) : ethersPathname;
+        if (instance == null || ! instance.filename.equals(ethers))
+            instance = new Ethers(ethersPathname);
+        return instance.getMac(hostname);
     }
 
+    /**
+     * Same as two parameter version, but uses the system default.
+     * @param hostname
+     * @return
+     * @throws IOException
+     * @throws org.harctoolbox.harchardware.misc.Ethers.MacAddressNotFound 
+     */
     public static String getEtherAddress(String hostname) throws IOException, MacAddressNotFound {
-        return getEtherAddress(hostname, new File(defaultPathname));
+        return getEtherAddress(hostname, null);
     }
 
     /**
@@ -70,9 +90,11 @@ public class Ethers {
         }
     }
 
-    private final HashMap<String, String> table;
+    private final Map<String, String> table;
+    private final File filename;
 
-    public Ethers(File file) throws IOException {
+    private Ethers(File file) throws IOException {
+        this.filename = file;
         table = new HashMap<>(64);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.defaultCharset()))) {
             while (true) {
@@ -80,7 +102,7 @@ public class Ethers {
                 if (line == null)
                     break;
 
-                if (line.startsWith("#"))
+                if (line.startsWith("#") || line.isBlank())
                     continue;
 
                 String[] str = line.split("[\\s]+");
@@ -94,31 +116,31 @@ public class Ethers {
         }
     }
 
-    public Ethers() throws IOException {
-        this(new File(defaultPathname));
-    }
-
     /**
      * Returns MAC address.
      *
      * @param hostname
      * @return Mac-address belonging to the host in the argument, or null if not found.
      */
-    public String getMacOrNull(String hostname) {
-        String mac = table.get(hostname);
-        if (mac != null)
-            return mac;
+    private String getMacOrNull(String hostname) {
+        if (hostname == null || hostname.isEmpty())
+            return null;
+        if (table.containsKey(hostname))
+            return table.get(hostname); // may be null
 
         InetAddress addr;
         try {
             addr = InetAddress.getByName(hostname);
         } catch (UnknownHostException ex) {
+            table.put(hostname, null);
             return null;
         }
         String hostnameCanonical = addr.getCanonicalHostName();
-        mac = table.get(hostnameCanonical);
-        if (mac != null)
+        String mac = table.get(hostnameCanonical);
+        if (mac != null) {
+            table.put(hostname, mac);
             return mac;
+        }
 
         return table.get(hostnameCanonical.split("\\.")[0]);
     }
@@ -131,7 +153,7 @@ public class Ethers {
      * found.
      * @throws org.harctoolbox.harchardware.misc.Ethers.MacAddressNotFound
      */
-    public String getMac(String hostname) throws MacAddressNotFound {
+    private String getMac(String hostname) throws MacAddressNotFound {
         String mac = getMacOrNull(hostname);
         if (mac == null)
             throw new MacAddressNotFound(hostname);
