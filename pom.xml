@@ -298,7 +298,7 @@
         <dependency>
             <groupId>org.harctoolbox</groupId>
             <artifactId>IrpTransmogrifier</artifactId>
-            <version>1.2.14</version>
+            <version>1.2.15-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
