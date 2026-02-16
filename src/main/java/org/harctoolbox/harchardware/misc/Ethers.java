@@ -54,7 +54,7 @@ public class Ethers {
     public static String getEtherAddress(String hostname, File ethersPathname) throws MacAddressNotFound, IOException {
         File ethers = ethersPathname == null ? new File(defaultPathname) : ethersPathname;
         if (instance == null || ! instance.filename.equals(ethers))
-            instance = new Ethers(ethersPathname);
+            instance = new Ethers(ethers);
         return instance.getMac(hostname);
     }
 
