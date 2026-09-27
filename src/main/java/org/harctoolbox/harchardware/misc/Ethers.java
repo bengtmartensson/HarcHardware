@@ -102,7 +102,7 @@ public class Ethers {
                 if (line == null)
                     break;
 
-                if (line.startsWith("#") || line.isBlank())
+                if (line.startsWith("#") || line.trim().isEmpty())
                     continue;
 
                 String[] str = line.split("[\\s]+");
